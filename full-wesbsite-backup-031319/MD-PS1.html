@@ -1,0 +1,3454 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<meta charset="utf-8">
+<title></title>
+<style>
+	body {background-color:#ffffff; font-size:15px; font-family:Arial, sans-serif;}
+	p {margin-left:auto; margin-right:auto;}	/* keep paragraphs narrow and centered */
+	li {margin-bottom:8px;}
+	input[type=range] {
+		width:230px; 
+		height:20px; 
+		padding:0px;
+		-webkit-user-select: none; 
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	input[type="range"]::-ms-tooltip {
+		display: none;          /* hide automatic readout in IE */
+	}
+	input[type="range"]::-ms-track {
+		border: none;
+		color: transparent;     /* hide tick marks in IE */
+	}
+	input[type="range"]::-ms-fill-lower {
+		background: #808080;
+	}
+	input[type="range"]::-ms-fill-upper {
+		background: #e8e8e8;
+	}
+	input[type="range"]::-ms-thumb {
+		border: none;
+	}
+	select {font-size:16px;}
+	.custombutton {		/* this class turns an ordinary link or span into a nice attractive push-button */
+		display: inline-block; 
+		width:78px; 
+		height:28px; 
+		line-height:28px; 
+		font-size:15px; 
+		font-family:Arial, sans-serif; 
+		text-align:center;
+		color:black; 
+		background:-webkit-linear-gradient(white,#ceeece,#ceeece,#c0e0c0);
+		background:linear-gradient(white,#ceeece,#ceeece,#c0e0c0);
+		text-decoration:none; 
+		border: 1px solid black; 
+		border-radius: 5px;
+		-webkit-user-select: none;
+		-moz-user-select: -moz-none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+		cursor: pointer;
+		-webkit-tap-highlight-color: rgba(0,0,0,0);
+	}
+	.custombutton:active {
+		background:-webkit-linear-gradient(#909090,#808080,#808080,#707070);
+		background:linear-gradient(#909090,#808080,#808080,#707070);
+	}
+	.startbutton {
+		background:-webkit-linear-gradient(#dfffdf,#ceeece,#ceeece,#c0e0c0);
+		background:linear-gradient(#dfffdf,#ceeece,#ceeece,#c0e0c0);	/* green tint */
+	}
+	.startbutton:active {
+		background:-webkit-linear-gradient(#909090,#808080,#808080,#707070);
+		background:linear-gradient(#909090,#808080,#808080,#707070);
+	}
+</style>
+</head>
+
+<body>
+
+<!-- Here's the HTML to create the canvas, text, and GUI controls... -->
+
+<h1 style="color: #1a5276; font-size:30px; text-align:center; margin-bottom:8px;"></h1>
+
+<div id="mainDiv" style="width:1150px; margin-left:auto; margin-right:auto;">
+
+	<div id="appDiv" style="background-color: #808b96; border:5px solid  #808b96;">
+
+		<div id="controlPanel" style="float:left; width:250px; margin-left:10px; text-align:center;">
+			<div style="margin-bottom:4px;">
+				<a href="javascript:void(0)" id="startButton" class="custombutton startbutton" onclick="startStop()" ontouchstart="">Start</a>
+				<a href="javascript:void(0)" class="custombutton" onclick="simulate()" ontouchstart="">Step</a>
+				<a href="javascript:void(0)" class="custombutton" onclick="restart()" ontouchstart="">Restart</a>
+			</div>
+			<div style="margin-bottom:4px;">
+				<a href="javascript:void(0)" class="custombutton" onclick="speedFactor(0.9)" ontouchstart="">Slower</a>
+				<a href="javascript:void(0)" class="custombutton" style="width:36px; font-size:14px;" onclick="speedFactor(0.99)" ontouchstart="">&minus;1%</a>
+				<a href="javascript:void(0)" class="custombutton" style="width:36px; font-size:14px;" onclick="speedFactor(1.01)" ontouchstart="">+1%</a>
+				<a href="javascript:void(0)" class="custombutton" onclick="speedFactor(1.1)" ontouchstart="">Faster</a>
+			</div>
+			<div style="margin-top:5px;">
+				Ensemble: 
+				<select id="ensembleSelect" onchange="ensembleSlider()">
+					<option value="Microcanonical" selected>Microcanonical</option>
+					<option value="Canonical">Canonical</option>
+					<!--<option value="NPT">Isothermal-Isobaric</option>-->
+				</select>
+			</div>
+			<div style="margin-top:5px;">
+				Potential: 
+				<select id="potentialSelect">
+					<option value="Ideal Gas" selected>Ideal Gas</option>
+					<option value="Lennard-Jones">Lennard-Jones</option>
+					<!--<option value="Hard Sphere">Hard Sphere</option>-->
+				</select>
+			</div>
+			<div style="margin-top:5px;">
+				Initial Position: 
+				<select id="initial_pos">
+					<option value="random" selected>Random</option>
+					<option value="layers">Layers</option>
+				</select>
+			</div>
+			<div id = "Tequals" style="margin-top:8px; text-align:left;">
+				<div style="float:right;">
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeT(-1);" ontouchstart="">&minus;</span>
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeT(1);" ontouchstart="">+</span>
+				</div>
+				Temperature = <span id="TReadout">30</span> K
+			</div>
+			<div>
+				<input id="TESlider" type="range" min="0" max="500" value="100" oninput="changeT()" onchange="changeT()">
+			</div>
+			<div style="margin-top:8px; text-align:left;">
+				<div style="float:right;">
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN(-1);" ontouchstart="">&minus;</span>
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN(1);" ontouchstart="">+</span>
+				</div>
+				Number of He atoms = <span id="nReadout">250</span>
+			</div>
+			<div>
+				<input id="nSlider" type="range" min="0" max="1024" value="500" oninput="changeN()" onchange="changeN()">
+			</div>
+			<div style="margin-top:8px; text-align:left;">
+				<div style="float:right;">
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN2(-1);" ontouchstart="">&minus;</span>
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN2(1);" ontouchstart="">+</span>
+				</div>
+				Number of Ne atoms = <span id="n2Readout">250</span>
+			</div>
+			<div>
+				<input id="n2Slider" type="range" min="0" max="1024" value="500" oninput="changeN2()" onchange="changeN2()">
+			</div>
+			<div style="margin-top:8px; text-align:left;">
+				<div style="float:right;">
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN3(-1);" ontouchstart="">&minus;</span>
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN3(1);" ontouchstart="">+</span>
+				</div>
+				Number of Ar atoms = <span id="n3Readout">250</span>
+			</div>
+			<div>
+				<input id="n3Slider" type="range" min="0" max="1024" value="500" oninput="changeN3()" onchange="changeN3()">
+			</div>
+			<div style="margin-top:8px; text-align:left;">
+				<div style="float:right;">
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN4(-1);" ontouchstart="">&minus;</span>
+					<span class="custombutton" style="width:16px; height:16px; line-height:16px;" onclick="changeN4(1);" ontouchstart="">+</span>
+				</div>
+				Number of Xe atoms = <span id="n4Readout">250</span>
+			</div>
+			<div>
+				<input id="n4Slider" type="range" min="0" max="1024" value="500" oninput="changeN4()" onchange="changeN4()">
+			</div>
+			<div id="Vequals" style="margin-top:5px; text-align:left;">
+				Volume = <span id="sizeReadout">300</span>nm<sup>3</sup>
+			</div>
+			<div>
+				<input id="sizeSlider" type="range" min="5" max="100" value="10" oninput="changeSize()" onchange="changeSize()">
+			</div>
+			<div id="Pequals" style="margin-top:5px; text-align:left;">
+				External Pressure = <span id="pressureReadout">100000</span> Pa
+			</div>
+			<div>
+				<input id="pressureSlider" type="range" min="100" max="1000000" value="10" oninput="changeP()" onchange="changeP()">
+			</div>
+			<div style="margin-top:5px; text-align:left;">
+				<div style="float:right;"><input id="gravx10" type="checkbox" onchange="setGravity()">x10</div>
+				Gravity = <span id="gravReadout">0.000</span>
+			</div>
+			<div>
+				<input id="gravSlider" type="range" min="0" max="0.1" step="0.001" value="0" oninput="setGravity()" onchange="setGravity()">
+			</div>
+			<div style="margin-top:5px; text-align:left;">Steps per frame = <span id="stepsReadout">25</span></div>
+			<div>
+				<input id="stepsSlider" type="range" min="1" max="1000" value="25" oninput="changeSteps()" onchange="changeSteps()">
+			</div>
+			<div>
+				Background: 
+				<select id="bgColorSelect" onchange="paintCanvas()">
+					<option value="#000000" selected>Black</option>
+					<option value="#ffffff">White</option>
+					<option value="#fff5e6">Beige</option>
+					<option value="#ffe1f5">Pink</option>
+					<option value="#f0e1ff">Lavender</option>
+					<option value="#e6f0ff">Sky</option>
+					<option value="#e8f8f0">Sage</option>
+					<option value="#000064">Navy</option>
+					<option value="#320064">Plum</option>
+					<option value="#320000">Brown</option>
+					<option value="#3c3c3c">Gray</option>
+				</select>
+			</div>
+			<!-- <div style="margin-top:5px;"><input id="cellListCheck" type="checkbox" checked onchange="resetStepsPerSec()">Use cell list</div> -->
+		</div>
+		
+		<div id="canvasDiv" style="width:500px; float:left; position:relative; top:10px; left:25px;">
+			<canvas id="theCanvas" width="500" height="500">
+				Canvas not supported; please update your browser.
+			</canvas>
+			
+			<div id="selectDataPanel" style="display:none; width:90px; 
+				background-color:rgba(245,245,245,0.8); padding:3px; border:1px solid gray; font-family:monospace; font-size:12px;">
+				Test
+			</div>
+
+			<div id="fixTPanel" style="display:none; position:absolute; left:0px; top:0px; width:220px; 
+				background-color:rgba(221,221,221,0.9); padding:3px; border:1px solid gray; border-radius:5px; text-align:center;">
+				<div style="margin-bottom:2px;">Atom number <span id="atomNumber"></span></div>
+				<div style="margin-bottom:2px;">Temperature = <span id="atomTemp"></span></div>
+				<div style="margin-bottom:2px;"><input id="tempSlider" type="range" min="0" max="5" step="0.01" value="0" style="width:210px;" oninput="changeAtomTemp()" onchange="changeAtomTemp()"></div>
+				<div>
+					<a href="javascript:void(0)" class="custombutton" onclick="unfixT()" ontouchstart="">Unfix T</a>
+					<a href="javascript:void(0)" class="custombutton" onclick="fixT()" ontouchstart="">Fix T</a>
+				</div>
+			</div>
+			<div id="dataReadout" style="position:relative; left:0px; font-family:monospace; font-size:15px; line-height:22px; -webkit-text-size-adjust: 100%;">t = 0, E = 0, T = 0, P = 0</div>
+			</div>
+			<div style="clear:both;"></div>
+		</div>
+
+		<div id="dataPanel" style="float:right; margin-top:0px; display:none;">
+			<div id="dataControlPanel" style="position:relative; bottom:521px; width:250px; margin-left:10px; text-align:center;">
+				<div style="margin-bottom:4px;">
+					Data type:
+					<select id="dataSelect" onchange="dataSelectChange()">
+						<option value="system" selected>System totals</option>
+						<option value="all">All atoms</option>
+					</select>
+					<a href="javascript:void(0)" class="custombutton" style="position:relative; bottom:20px; right:165px; width:100px; height:20px; line-height:20px;" onclick="reset()" ontouchstart="">Reset stats</a>
+				</div>
+				<div style="position:relative; bottom:20px; margin-bottom:4px;">
+					<a href="javascript:void(0)" class="custombutton" style="width:100px;" onclick="writeStats()" ontouchstart="">Write Data </a>
+					<a href="javascript:void(0)" class="custombutton" style="width:100px;" onclick="clearDataArea()" ontouchstart="">Clear </a>
+					<div id="autoIntervalControl" style="margin-bottom:4px;">
+						Auto interval:
+						<select id="autoDataSelect" onchange="autoDataSelectChange()">
+							<option value="0" selected>None</option>
+							<option value="1">1</option>
+							<option value="10">10</option>
+							<option value="100">100</option>
+							<option value="1000">1000</option>
+							<option value="10000">10000</option>
+						</select>
+					</div>
+				</div>
+				<div id="allAtomsDataButtons" style="display:none;">
+					<a href="javascript:void(0)" class="custombutton" style="width:100px;" onclick="inputState()" ontouchstart="">Input state</a>
+					<a href="javascript:void(0)" class="custombutton" style="width:100px;" onclick="showJS()" ontouchstart="">Show JS</a>
+				</div>
+				<div>
+					File name:
+					<input id="name" type="text" name="name" value="filename.txt">
+					<a href="javascript:void(0)" class="custombutton" style="position:relative; top:5px; width:100px;" onclick="dlf('filename.txt',dataArea.value)" ontouchstart="">Download File </a>
+						<textarea id="dataArea" rows="10" name = "text" style="position:relative; bottom:15px; right:90px; width:600px; height:250px; resize:vertical; font-family:monospace" value="filename.txt"></textarea>
+				</div>
+				<div>
+				<textarea id="dataArea2" rows="10" style="position:relative; top:15px; right:90px; width:330px; height:250px; resize:vertical; font-family:monospace"></textarea>
+				</div>
+			</div>
+		</div>
+	<div id="energyReadout" style=" font-family:monospace; font-size:0px; -webkit-text-size-adjust: 100%;">&nbsp;</div>
+</div>
+
+<p>
+<b>Brief Instructions:</b>
+</p>
+<p>
+First, let the system equilibrate and then hit the "Reset stats" button to start getting data from the equilibrium system.
+</p>
+<p>
+Data can be written into the data area using the "Write Data" button. This will also write the data into a text file. Alternatively, the "Auto interval:" drop-down menu allows you to set a frequency at which the program will automatically write the data into your text file. The file name can be chosen by editing the text box that  initially reads "filename.txt". Finally, to download the text file containing your data, hit the "Download File" button.
+</p>
+
+<script src="mdpresets.js"></script>	<!-- contains big array of preset data, presetList[] -->
+<script>
+
+	// ------------------------------ DECLARATIONS AND INITIALIZATIONS ------------------------------
+
+
+	//Things to Fix:
+
+	//Hard Sphere
+	//Lennard Jones doesn't conserve energy completely
+
+
+	// Assign DOM elements to global variables (unnecessary in most browsers when names coincide):
+	var canvas = document.getElementById('theCanvas');
+	var context = canvas.getContext('2d');
+	var canvasDiv = document.getElementById('canvasDiv');
+	var startButton = document.getElementById('startButton');
+	var nReadout = document.getElementById('nReadout');
+	var n2Readout = document.getElementById('n2Readout');
+	var n3Readout = document.getElementById('n3Readout');
+	var n4Readout = document.getElementById('n4Readout');
+	var TReadout = document.getElementById('TReadout');
+	var pressureReadout = document.getElementById('pressureReadout');
+	var nSlider = document.getElementById('nSlider');
+	var n2Slider = document.getElementById('n2Slider');
+	var n3Slider = document.getElementById('n3Slider');
+	var n4Slider = document.getElementById('n4Slider');
+	var sizeReadout = document.getElementById('sizeReadout');
+	var sizeSlider = document.getElementById('sizeSlider');
+	var gravReadout = document.getElementById('gravReadout');
+	var gravSlider = document.getElementById('gravSlider');
+	var gravx10 = document.getElementById('gravx10');
+	var dtReadout = document.getElementById('dtReadout');
+	var dtSlider = document.getElementById('dtSlider');
+	var stepsReadout = document.getElementById('stepsReadout');
+	var stepsSlider = document.getElementById('stepsSlider');
+	var presetSelect = document.getElementById('presetSelect');
+	var mouseSelect = document.getElementById('mouseSelect');
+	var bondSelect = document.getElementById('bondSelect');
+	var mColorSelect = document.getElementById('mColorSelect');
+	var bgColorSelect = document.getElementById('bgColorSelect');
+	//var cellListCheck = document.getElementById('cellListCheck');	// for diagnostic tests
+	var selectDataPanel = document.getElementById('selectDataPanel');
+	var fixTPanel = document.getElementById('fixTPanel');
+	var atomNumber = document.getElementById('atomNumber');
+	var atomTemp = document.getElementById('atomTemp');
+	var tempSlider = document.getElementById('tempSlider');
+	var dataReadout = document.getElementById('dataReadout');
+	var moreButton = document.getElementById('moreButton');
+	var dataPanel = document.getElementById('dataPanel');
+	var energyReadout = document.getElementById('energyReadout');
+	var dataArea = document.getElementById('dataArea');
+	var dataArea2 = document.getElementById('dataArea2');
+	var dataSelect = document.getElementById('dataSelect');
+	var autoIntervalControl = document.getElementById('autoIntervalControl');
+	var autoDataSelect = document.getElementById('autoDataSelect');
+	var moreDetailCheckPanel = document.getElementById('moreDetailCheckPanel');
+	var moreDetailCheck = document.getElementById('moreDetailCheck');
+	var allAtomsDataButtons = document.getElementById('allAtomsDataButtons');
+
+	// LJ Parameters in SI units (He as the reference)
+	// epsilon = 10.22 kB
+	// sigma = 256 * 10^-12 m
+	// m = 6.6422 * 10^-27 kg
+	// Tau = 1.7561 * 10^-12 s
+	// v = 145.77 m/s
+	// F = 5.51321 * 10^-13 N
+	// P = 8.41249 * 10^6 N/m^2
+	// T = 10.22 K
+
+	//Ne
+	//epsilon = 35.6 kB --- 3.4834:1
+	//sigma = 275 * 10^-12 m --- 1.0742:1
+
+	//Ar
+	//epsilon = 120 kB --- 11.7417:1
+	//sigma = 341 * 10^-12 m --- 1.33203
+
+	//Xe
+	//epsilon = 229 kB --- 22.407:1
+	// sigma = 406 * 10^-12 m --- 1.58594
+	
+	// Miscellaneous global variables:
+	var mobile = navigator.userAgent.match(/iPhone|iPad|iPod|Android|BlackBerry|Opera Mini|IEMobile|Kindle/i)
+	var nMax = Number(nSlider.max);				// maximum number of molecules
+	var N = 0;									// current number of molecules
+	var nMax2 = Number(n2Slider.max);
+	var N2 = 0;
+	var nMax3 = Number(n3Slider.max);
+	var N3 = 0;
+	var nMax4 = Number(n4Slider.max);
+	var N4 = 0;
+	var time = 0;								// simulation time in natural units
+	var kineticE, potentialE, gravitationalE;	// energies
+	var averageT = 0, averageP = 0;				// temperature and pressure averaged over time
+	var intervalpressure = 0;
+	var averageintervalpressure = 0;
+	var currentT;
+	var currentE =0;
+	var sumE = 0;
+	var averageE = 0;
+	var currentV = 2097.150;
+	var totalV = 0;
+	var averageV = 0;
+	var Pext;
+	var canonT = 0;
+	var isoP = 0;
+	var boxWidthnew = 0;
+	var pressure;								// instantaneous P, computed each step
+	var totalT, totalP, sampleCount, sampleCount2;			// variables for computing average T and P
+	var lastSampleTime = 0;						// simulation time when T and P were last sampled
+	var lastAutoRecordTime = 0;					// used for auto-recording data at regular intervals
+	var momentumX, momentumY, momentumZ;		// total momentum of system
+	var pxPerUnit = 1;							// molecule diameter in pixels (dummy value until init)
+	var boxWidth = canvas.width / pxPerUnit;	// width of box in natural units
+	var running = false;						// will be true when running
+	var stepCount = 0;							// number of calculation steps (used to monitor performance)
+	var startTime = 0;							// clock time when stepCount was zero
+	var selectedAtom = -1;						// index of atom selected for highlight/data (-1 if none)
+	var clickedAtom = 0;						// index of atom that was clicked on
+	var dragging = false;						// true when mouse (or touch) action is in progress
+	var mouseX, mouseY, mouseZ;					// mouse coordinates in physics units (valid when dragging)
+	var drawingBond = false;					// true when we're creating a bond between atoms
+	var recentSizeDecrease = false;				// true for brief time after size is increased, to limit rate
+	var targetSize;								// box size that we're moving toward, if resize in progress
+	var sizeStepTimer = 0;						// timer (in simulation units) that counts down until next resize step
+
+	// Arrays of atoms' positions, velocities, and accelerations:
+	var x = new Array(nMax), y = new Array(nMax), z = new Array(nMax);
+	var x2 = new Array(nMax2), y2 = new Array(nMax2), z2 = new Array(nMax2);
+	var x3 = new Array(nMax3), y3 = new Array(nMax3), z3 = new Array(nMax3);
+	var x4 = new Array(nMax4), y4 = new Array(nMax4), z4 = new Array(nMax4);
+	var vx = new Array(nMax), vy = new Array(nMax), vz = new Array(nMax);
+	var vx2 = new Array(nMax2), vy2 = new Array(nMax2), vz2 = new Array(nMax2);
+	var vx3 = new Array(nMax3), vy3 = new Array(nMax3), vz3 = new Array(nMax3);
+	var vx4 = new Array(nMax4), vy4 = new Array(nMax4), vz4 = new Array(nMax4);
+	var ax = new Array(nMax), ay = new Array(nMax), az = new Array(nMax);
+	var ax2 = new Array(nMax2), ay2 = new Array(nMax2), az2 = new Array(nMax2);
+	var ax3 = new Array(nMax3), ay3 = new Array(nMax3), az3 = new Array(nMax3);
+	var ax4 = new Array(nMax4), ay4 = new Array(nMax4), az4 = new Array(nMax4);
+	var atomColor = new Array(nMax);	// and colors!
+	var atomColor2 = new Array(nMax2);
+	var atomColor3 = new Array(nMax3);
+	var atomColor4 = new Array(nMax4);
+
+	// Mysterious incantation that sometimes helps for smooth animation:
+	window.requestAnimFrame = (function(callback) {
+	return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+		function(callback) {
+			window.setTimeout(callback, 1);		// second parameter is time in ms
+		};
+	})();
+
+	window.onload = init;
+
+	// Initializations
+	function init() {
+		// initialize differently for computers and mobile devices:
+		if (mobile) sizeSlider.value = "25"; else sizeSlider.value = "50";
+		if (mobile) nSlider.value = "5"; else nSlider.value = "5";
+		if (mobile) n2Slider.value = "0"; else n2Slider.value = "0";
+		if (mobile) n3Slider.value = "0"; else n3Slider.value = "0";
+		if (mobile) n4Slider.value = "0"; else n4Slider.value = "0";
+		if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+		TESlider.style.display = "none";
+		Tequals.style.display = "none";
+		Pequals.style.display = "none";
+		pressureSlider.style.display = "none";
+		sizeSlider.style.display = "block";
+		Vequals.style.display = "block";	
+		} else
+			if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Canonical"){
+		TESlider.style.display = "block";
+		Tequals.style.display = "block";
+		Pequals.style.display = "none";
+		pressureSlider.style.display = "none";	
+		sizeSlider.style.display = "block";
+		Vequals.style.display = "block";
+		} else
+			if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "NPT"){
+		TESlider.style.display = "block";
+		Tequals.style.display = "block";
+		Pequals.style.display = "block";
+		pressureSlider.style.display = "block";	
+		sizeSlider.style.display = "none";
+		Vequals.style.display = "none";
+		}
+
+		TESlider.value = 30.0;
+		pressureSlider.value = 100000;
+
+		dataPanel.style.display = "block";
+		changeSize();
+		changeN();		
+		changeN2();
+		changeN3();
+		changeN4();
+		if (dataSelect.options[dataSelect.selectedIndex].value == "system") {
+			dataArea.value = "t (ps)\t" + "\tE (aJ)\t" + "\tT (K)\t" + "\tP (Pa)\t" + "\tV (nm^3)\t" + "\tN\t" + "\t<E> (aJ)" + "\t<T> (K)\t" + "\t<P> (Pa)\t" + "\t<V> (nm^3)\n";
+		}else dataArea.value = "";
+		dataArea.style.display = "none";
+	}
+
+	// ------------------------------ PHYSICS SIMULATION CODE ------------------------------
+
+	// Simulate function executes a bunch of steps and then schedules another call to itself:
+	function simulate() {
+		// Execute a bunch of time steps:
+		var stepsPerFrame = Number(stepsSlider.value);
+		for (var step=0; step<stepsPerFrame; step++) {
+			doStep();
+		}
+		paintCanvas();
+		stepCount += stepsPerFrame;
+		//computeStats();
+		showStats();
+		if (running) {
+			// schedule the next animation frame:
+			//requestAnimFrame(function() { simulate(); });		// limits the frame rate
+			window.setTimeout(simulate, 1);					// runs as fast as possible (nominal 1 ms delay)
+		}
+	}
+
+	// Execute a single time step (Verlet algorithm):
+	function doStep() {
+		computeStats();
+		var dt = 0.004;//Number(dtSlider.value);
+		var halfdt = 0.5 * dt;
+		var halfdtsquared = halfdt * dt;
+		var equilibrate = 0;
+		for (var i=0; i<N; i++) {
+			x[i] += vx[i]*dt + ax[i]*halfdtsquared;
+			y[i] += vy[i]*dt + ay[i]*halfdtsquared;
+			z[i] += vz[i]*dt + az[i]*halfdtsquared;
+			vx[i] += ax[i]*halfdt;
+			vy[i] += ay[i]*halfdt;
+			vz[i] += az[i]*halfdt;
+		}
+		for (var i=0; i<N2; i++) {
+			x2[i] += vx2[i]*dt + ax2[i]*halfdtsquared;
+			y2[i] += vy2[i]*dt + ay2[i]*halfdtsquared;
+			z2[i] += vz2[i]*dt + az2[i]*halfdtsquared;
+			vx2[i] += ax2[i]*halfdt;
+			vy2[i] += ay2[i]*halfdt;
+			vz2[i] += az2[i]*halfdt;
+		}
+		for (var i=0; i<N3; i++) {
+			x3[i] += vx3[i]*dt + ax3[i]*halfdtsquared;
+			y3[i] += vy3[i]*dt + ay3[i]*halfdtsquared;
+			z3[i] += vz3[i]*dt + az3[i]*halfdtsquared;
+			vx3[i] += ax3[i]*halfdt;
+			vy3[i] += ay3[i]*halfdt;
+			vz3[i] += az3[i]*halfdt;
+		}
+		for (var i=0; i<N4; i++) {
+			x4[i] += vx4[i]*dt + ax4[i]*halfdtsquared;
+			y4[i] += vy4[i]*dt + ay4[i]*halfdtsquared;
+			z4[i] += vz4[i]*dt + az4[i]*halfdtsquared;
+			vx4[i] += ax4[i]*halfdt;
+			vy4[i] += ay4[i]*halfdt;
+			vz4[i] += az4[i]*halfdt;
+		}
+		computeAccelerations();
+		computeStats();
+		updateTandP();
+		for (var i=0; i<N; i++) {
+			vx[i] += ax[i]*halfdt;
+			vy[i] += ay[i]*halfdt;
+			vz[i] += az[i]*halfdt;
+		}
+		
+		for (var i=0; i<N2; i++) {
+			vx2[i] += ax2[i]*halfdt;
+			vy2[i] += ay2[i]*halfdt;
+			vz2[i] += az2[i]*halfdt;
+		}
+		for (var i=0; i<N3; i++) {
+			vx3[i] += ax3[i]*halfdt;
+			vy3[i] += ay3[i]*halfdt;
+			vz3[i] += az3[i]*halfdt;
+		}
+		for (var i=0; i<N4; i++) {
+			vx4[i] += ax4[i]*halfdt;
+			vy4[i] += ay4[i]*halfdt;
+			vz4[i] += az4[i]*halfdt;
+		}
+
+        // Assign random velocities to fixed-T atoms:
+        //RD: To extend this to 3D, we need the Marsaglia method, see: Annal Math. Statistics, V43, No 2, 645-646
+        //RD: Alternatively, we could remove this feature...
+        //BGE: Done.
+
+        if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+
+        } else if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Canonical"){
+	        for (var i=0; i<N; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x[i] > 0.1){	
+						if (y[i] > 0.1){
+							if (z[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx[i] = u * e1 * Math.sqrt(Number(TESlider.value)/10.22);
+								vy[i] = u * e2 * Math.sqrt(Number(TESlider.value)/10.22);
+								vz[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/10.22);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N2; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x2[i] > 0.1){	
+						if (y2[i] > 0.1){
+							if (z2[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx2[i] = u * e1 * Math.sqrt(Number(TESlider.value)/51.1);
+								vy2[i] = u * e2 * Math.sqrt(Number(TESlider.value)/51.1);
+								vz2[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/51.1);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N3; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x3[i] > 0.1){	
+						if (y3[i] > 0.1){
+							if (z3[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx3[i] = u * e1 * Math.sqrt(Number(TESlider.value)/102.2);
+								vy3[i] = u * e2 * Math.sqrt(Number(TESlider.value)/102.2);
+								vz3[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/102.2);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N4; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x4[i] > 0.1){	
+						if (y4[i] > 0.1){
+							if (z4[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx4[i] = u * e1 * Math.sqrt(Number(TESlider.value)/334.7);
+								vy4[i] = u * e2 * Math.sqrt(Number(TESlider.value)/334.7);
+								vz4[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/334.7);
+							}
+						}
+					}
+	        	}
+	        }
+	    } else if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "NPT"){
+	        for (var i=0; i<N; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x[i] > 0.1){	
+						if (y[i] > 0.1){
+							if (z[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx[i] = u * e1 * Math.sqrt(Number(TESlider.value)/10.22);
+								vy[i] = u * e2 * Math.sqrt(Number(TESlider.value)/10.22);
+								vz[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/10.22);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N2; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x2[i] > 0.1){	
+						if (y2[i] > 0.1){
+							if (z2[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx2[i] = u * e1 * Math.sqrt(Number(TESlider.value)/51.1);
+								vy2[i] = u * e2 * Math.sqrt(Number(TESlider.value)/51.1);
+								vz2[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/51.1);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N3; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x3[i] > 0.1){	
+						if (y3[i] > 0.1){
+							if (z3[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx3[i] = u * e1 * Math.sqrt(Number(TESlider.value)/102.2);
+								vy3[i] = u * e2 * Math.sqrt(Number(TESlider.value)/102.2);
+								vz3[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/102.2);
+							}
+						}
+					}
+	        	}
+	        }
+	        for (var i=0; i<N4; i++) {
+	        	if (Math.random() < 0.075*dt) {	// do this only a small percentage of the time
+					if (x4[i] > 0.1){	
+						if (y4[i] > 0.1){
+							if (z4[i] > 0.1){
+								var e1, e2, e3, e4, w, w2;
+								do {
+									e1 = 2 * Math.random() - 1;
+									e2 = 2 * Math.random() - 1;
+									w = e1*e1 + e2*e2;
+								} while (w >= 1.0);
+								do {
+									e3 = 2 * Math.random() - 1;
+									e4 = 2 * Math.random() - 1;
+									w2 = e3*e3 + e4*e4;
+								} while (w2 >= 1.0);
+								var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+								var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+								vx4[i] = u * e1 * Math.sqrt(Number(TESlider.value)/334.7);
+								vy4[i] = u * e2 * Math.sqrt(Number(TESlider.value)/334.7);
+								vz4[i] = u2 * e3 * Math.sqrt(Number(TESlider.value)/334.7);
+							}
+						}
+					}
+	        	}
+	        }
+		    if (boxWidth>0.0){
+			    Pext = pressureSlider.value;
+			    if (averageintervalpressure > 0.0){
+				    var mu = 1 - 0.0000000005*(Pext-averageP);
+				   	boxWidth = boxWidth * mu;
+				    for (var i=0; i<N; i++){
+				    	x[i] = x[i]*mu;
+				    	y[i] = y[i]*mu;
+				    	z[i] = z[i]*mu;
+				    }
+				    for (var i=0; i<N2; i++){
+				    	x2[i] = x2[i]*mu;
+				    	y2[i] = y2[i]*mu;
+				    	z2[i] = z2[i]*mu;
+				    }
+				    for (var i=0; i<N3; i++){
+				    	x3[i] = x3[i]*mu;
+				    	y3[i] = y3[i]*mu;
+				    	z3[i] = z3[i]*mu;
+				    }
+				    for (var i=0; i<N4; i++){
+				    	x4[i] = x4[i]*mu;
+				    	y4[i] = y4[i]*mu;
+				    	z4[i] = z4[i]*mu;
+				    }
+				}
+			    /*boxWidthnew = boxWidth + (pressure-Pext) * 0.000000005;
+			    var scalewidth = boxWidthnew/boxWidth;
+			    for (var i=0; i<N; i++){
+			    	x[i] = x[i]*scalewidth;
+			    	y[i] = y[i]*scalewidth;
+			    	z[i] = z[i]*scalewidth;
+			    }
+			    boxWidth = boxWidthnew;*/
+			    pxPerUnit = canvas.width / boxWidth;
+			}
+	    }
+
+        time += dt;
+        autoRecordData();
+        resizeStep();
+	}
+
+	// Compute accelerations of all molecules:
+	function computeAccelerations() {
+		var dx, dy, dz, dx2, dy2, dz2, r, rSquared, rSquaredInv, attract, repel, fOverR, fx, fy, fz;
+		var forceCutoff = 3.0;						// distance beyond which we set force=0
+		var forceCutoff2 = forceCutoff*forceCutoff;
+		var sphereCutoff = 1.0;
+		var pEsoftCutoff = 4 * (Math.pow(sphereCutoff,-12));
+		var NehardCutoff = 1.0742; // fix
+		var ArCutoff = 1.33203; // fix
+		var XeCutoff = 1.58594; // fix
+		var pEatCutoff = 4 * (Math.pow(forceCutoff,-12) - Math.pow(forceCutoff,-6));
+		var g = Number(getGravity());
+		var wallStiffness = 50;						// spring constant for bouncing off walls
+		var wallForce = 0.0;
+		potentialE = 0.0;
+		
+
+			//Reset accelerations
+			for (i=0;i<N;i++){
+				ax[i]=0.0;
+				ay[i]=0.0;
+				az[i]=0.0;
+			}
+			for (i=0;i<N2;i++){
+				ax2[i]=0.0;
+				ay2[i]=0.0;
+				az2[i]=0.0;
+			}
+			for (i=0;i<N3;i++){
+				ax3[i]=0.0;
+				ay3[i]=0.0;
+				az3[i]=0.0;
+			}
+			for (i=0;i<N4;i++){
+				ax4[i]=0.0;
+				ay4[i]=0.0;
+				az4[i]=0.0;
+			}
+			
+			//Bouncing off the walls
+			for (i=0;i<N;i++){
+				if (x[i]<0.0){
+					if (vx[i]<0.0){
+						vx[i] = -vx[i];
+						wallForce += 2*vx[i];
+					}
+				} else
+					if(x[i]>boxWidth){
+						if(vx[i]>0.0){
+							vx[i] = -vx[i];
+							wallForce -= 2*vx[i];
+						}
+					}
+				if (y[i]<0.0){
+					if (vy[i]<0.0){
+						vy[i] = -vy[i];
+						wallForce += 2*vy[i];
+					}
+				} else
+					if(y[i]>boxWidth){
+						if(vy[i]>0.0){
+							vy[i] = -vy[i];
+							wallForce -= 2*vy[i];
+						}
+					}
+				if (z[i]<0.0){
+					if (vz[i]<0.0){
+						vz[i] = -vz[i];
+						wallForce += 2*vz[i];
+					}
+				} else
+					if(z[i]>boxWidth){
+						if(vz[i]>0.0){
+							vz[i] = -vz[i];
+							wallForce -= 2*vz[i];
+						}
+					}
+			}
+			for (i=0;i<N2;i++){
+				if (x2[i]<0.0){
+					if (vx2[i]<0.0){
+						vx2[i] = -vx2[i];
+						wallForce += 10*vx2[i];
+					}
+				} else
+					if(x2[i]>boxWidth){
+						if(vx2[i]>0.0){
+							vx2[i] = -vx2[i];
+							wallForce -= 10*vx2[i];
+						}
+					}
+				if (y2[i]<0.0){
+					if (vy2[i]<0.0){
+						vy2[i] = -vy2[i];
+						wallForce += 10*vy2[i];
+					}
+				} else
+					if(y2[i]>boxWidth){
+						if(vy2[i]>0.0){
+							vy2[i] = -vy2[i];
+							wallForce -= 10*vy2[i];
+						}
+					}
+				if (z2[i]<0.0){
+					if (vz2[i]<0.0){
+						vz2[i] = -vz2[i];
+						wallForce += 10*vz2[i];
+					}
+				} else
+					if(z2[i]>boxWidth){
+						if(vz2[i]>0.0){
+							vz2[i] = -vz2[i];
+							wallForce -= 10*vz2[i];
+						}
+					}
+			}
+			for (i=0;i<N3;i++){
+				if (x3[i]<0.0){
+					if (vx3[i]<0.0){
+						vx3[i] = -vx3[i];
+						wallForce += 20*vx3[i];
+					}
+				} else
+					if(x3[i]>boxWidth){
+						if(vx3[i]>0.0){
+							vx3[i] = -vx3[i];
+							wallForce -= 20*vx3[i];
+						}
+					}
+				if (y3[i]<0.0){
+					if (vy3[i]<0.0){
+						vy3[i] = -vy3[i];
+						wallForce += 20*vy3[i];
+					}
+				} else
+					if(y3[i]>boxWidth){
+						if(vy3[i]>0.0){
+							vy3[i] = -vy3[i];
+							wallForce -= 20*vy3[i];
+						}
+					}
+				if (z3[i]<0.0){
+					if (vz3[i]<0.0){
+						vz3[i] = -vz3[i];
+						wallForce += 20*vz3[i];
+					}
+				} else
+					if(z3[i]>boxWidth){
+						if(vz3[i]>0.0){
+							vz3[i] = -vz3[i];
+							wallForce -= 20*vz3[i];
+						}
+					}
+			}
+			for (i=0;i<N4;i++){
+				if (x4[i]<0.0){
+					if (vx4[i]<0.0){
+						vx4[i] = -vx4[i];
+						wallForce += 65.5*vx4[i];
+					}
+				} else
+					if(x4[i]>boxWidth){
+						if(vx4[i]>0.0){
+							vx4[i] = -vx4[i];
+							wallForce -= 65.5*vx4[i];
+						}
+					}
+				if (y4[i]<0.0){
+					if (vy4[i]<0.0){
+						vy4[i] = -vy4[i];
+						wallForce += 65.5*vy4[i];
+					}
+				} else
+					if(y4[i]>boxWidth){
+						if(vy4[i]>0.0){
+							vy4[i] = -vy4[i];
+							wallForce -= 65.5*vy4[i];
+						}
+					}
+				if (z4[i]<0.0){
+					if (vz4[i]<0.0){
+						vz4[i] = -vz4[i];
+						wallForce += 65.5*vz4[i];
+					}
+				} else
+					if(z4[i]>boxWidth){
+						if(vz4[i]>0.0){
+							vz4[i] = -vz4[i];
+							wallForce -= 65.5*vz4[i];
+						}
+					}
+			}
+			
+
+		//Potential Interactions
+
+		//RD: be careful here...if the pairwise algorithm is ok for N=2500, then we are fine... if not, then we either have to implement the O(N) algorithm in 3D or limit the maximum number of atoms...
+
+        if (potentialSelect.options[potentialSelect.selectedIndex].value == "Lennard-Jones"){ 
+                var sigHeNe2 = (1+1.0742) * (1+1.0742)/4.0;
+                var sigHeAr2 = (1+1.33203) * (1+1.33203)/4.0;
+                var sigHeXe2 = (1+1.58594) * (1+1.58594)/4.0;
+                var sigNeAr2 = (1.0742+1.33203) * (1.0742+1.33203)/4.0;
+                var sigNeXe2 = (1.0742+1.58594) * (1.0742+1.58594)/4.0;
+                var sigArXe2 = (1.33203+1.58594) * (1.33203+1.58594)/4.0;
+       	        var epsHeNe = Math.sqrt(3.4834);
+                var epsHeAr = Math.sqrt(11.7417); 
+                var epsHeXe = Math.sqrt(22.407); 
+                var epsNeAr = Math.sqrt(3.4834*11.7417); 
+                var epsNeXe = Math.sqrt(3.4834*22.407); 
+                var epsArXe = Math.sqrt(11.7417*22.407); 
+	    	if ((N < 2500) || (boxWidth < 4*forceCutoff) /* || !cellListCheck.checked */ ) {
+				for (var i=0; i<N; i++) {			// He-He LJ interaction
+					for (var j=0; j<i; j++) {
+						dx = x[i] - x[j];
+						dy = y[i] - y[j];
+						dz = z[i] -z[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) {
+							rSquaredInv = 1.0 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 *(repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * ((2.0 * repel) - attract) * rSquaredInv;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax[i] += fx;  
+							ay[i] += fy;
+							az[i] += fz;
+							ax[j] -= fx;  // Newton 3rd law
+							ay[j] -= fy;
+							az[j] -= fz;
+						}
+					}
+				}
+				for (var i=0; i<N; i++) {	//He-Ne interaction 
+					for (var j=0; j<N2; j++) {
+						dx = x[i] - x2[j];
+						dy = y[i] - y2[j];
+						dz = z[i] -z2[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigHeNe2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsHeNe * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsHeNe *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax[i] += fx;  // add this force on to i's acceleration (m = 1)
+							ay[i] += fy;
+							az[i] += fz;
+							ax2[j] -= fx/5.0;  // Newton's 3rd law
+							ay2[j] -= fy/5.0;
+							az2[j] -= fz/5.0;
+						}
+					}
+				}
+				for (var i=0; i<N; i++) {	//He-Ar interaction 
+					for (var j=0; j<N3; j++) {
+						dx = x[i] - x3[j];
+						dy = y[i] - y3[j];
+						dz = z[i] -z3[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigHeAr2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsHeAr * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsHeAr *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax[i] += fx;  // add this force on to i's acceleration (m = 1)
+							ay[i] += fy;
+							az[i] += fz;
+							ax3[j] -= fx/10.0;  // Newton's 3rd law
+							ay3[j] -= fy/10.0;
+							az3[j] -= fz/10.0;
+						}						
+					}
+				}
+				for (var i=0; i<N; i++) {	//He-Xe interaction 
+					for (var j=0; j<N4; j++) {
+						dx = x[i] - x4[j];				
+						dy = y[i] - y4[j];
+						dz = z[i] -z4[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigHeXe2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsHeXe * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsHeXe *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax[i] += fx;  // add this force on to i's acceleration (m = 1)
+							ay[i] += fy;
+							az[i] += fz;
+							ax4[j] -= fx/32.75;  // Newton's 3rd law
+							ay4[j] -= fy/32.75;
+							az4[j] -= fz/32.75;
+						}
+					}
+				}
+				for (var i=0; i<N2; i++) {	//Ne-Ar interaction 
+					for (var j=0; j<N3; j++) {
+						dx = x2[i] - x3[j];
+						dy = y2[i] - y3[j];
+						dz = z2[i] - z3[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigNeAr2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsNeAr * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsNeAr *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax2[i] += fx/5.0;  // add this force on to i's acceleration (m = 1)
+							ay2[i] += fy/5.0;
+							az2[i] += fz/5.0;
+							ax3[j] -= fx/10.0;  // Newton's 3rd law
+							ay3[j] -= fy/10.0;
+							az3[j] -= fz/10.0;
+						}	
+					}
+				}
+				for (var i=0; i<N2; i++) {	//Ne-Xe interaction 
+					for (var j=0; j<N4; j++) {
+						dx = x2[i] - x4[j];
+						dy = y2[i] - y4[j];
+						dz = z2[i] -z4[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigNeXe2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsNeXe * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsNeXe *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax2[i] += fx/5.0;  // add this force on to i's acceleration (m = 1)
+							ay2[i] += fy/5.0;
+							az2[i] += fz/5.0;
+							ax4[j] -= fx/32.75;  // Newton's 3rd law
+							ay4[j] -= fy/32.75;
+							az4[j] -= fz/32.75;
+						}
+					}
+				}
+				for (var i=0; i<N3; i++) {	//Ar-Xe interaction 
+					for (var j=0; j<N4; j++) {
+						dx = x3[i] - x4[j];
+						dy = y3[i] - y4[j];
+						dz = z3[i] -z4[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) { 
+							rSquaredInv = sigArXe2 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += (4.0 * epsArXe * (repel - attract)) - pEatCutoff;
+							fOverR = 24.0 * epsArXe *((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax3[i] += fx/10.0;  // add this force on to i's acceleration (m = 1)
+							ay3[i] += fy/10.0;
+							az3[i] += fz/10.0;
+							ax4[j] -= fx/32.75;  // Newton's 3rd law
+							ay4[j] -= fy/32.75;
+							az4[j] -= fz/32.75;
+						}		
+					}
+				}
+			}
+	        if ((N2 < 2500) || (boxWidth < 4*forceCutoff) /* || !cellListCheck.checked */ ) {
+				for (var i=0; i<N2; i++) {			// Ne-Ne LJ interaction
+					for (var j=0; j<i; j++) {
+						dx = x2[i] - x2[j];
+						dy = y2[i] - y2[j];
+						dz = z2[i] - z2[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) {
+							rSquaredInv = 1.07422*1.07422 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += 3.4834 * (4.0 *(repel - attract)) - 3.4834 * pEatCutoff;
+							fOverR = 24.0 * 3.4834 * ((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax2[i] += fx/5.0;  
+							ay2[i] += fy/5.0;
+							az2[i] += fz/5.0;
+							ax2[j] -= fx/5.0;  // Newton's 3rd law
+							ay2[j] -= fy/5.0;
+							az2[j] -= fz/5.0;
+						}					
+					}
+				}
+			}
+			if ((N3 < 2500) || (boxWidth < 4*forceCutoff) ) {
+				for (var i=0; i<N3; i++) {			// Ar-Ar interaction
+					for (var j=0; j<i; j++) {
+						dx = x3[i] - x3[j];
+						dy = y3[i] - y3[j];
+						dz = z3[i] -z3[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) {
+							rSquaredInv = 1.33203 * 1.33203 / rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += 11.7417 * (4.0 *(repel - attract)) - 11.417 * pEatCutoff;
+							fOverR = 24.0 * 11.7417 * ((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax3[i] += fx/10.0;  
+							ay3[i] += fy/10.0;
+							az3[i] += fz/10.0;
+							ax3[j] -= fx/10.0;  // Newton's 3rd law
+							ay3[j] -= fy/10.0;
+							az3[j] -= fz/10.0;
+						}
+					}
+				}
+			}
+			if ((N4 < 2500) || (boxWidth < 4*forceCutoff) ) {
+				for (var i=0; i<N4; i++) {			//Xe-Xe interaction
+					for (var j=0; j<i; j++) {
+						dx = x4[i] - x4[j];
+						dy = y4[i] - y4[j];
+						dz = z4[i] - z4[j];
+						rSquared = dx * dx + dy * dy + dz * dz;
+						if (rSquared < forceCutoff2) {
+							rSquaredInv = 1.58594*1.58594/ rSquared;
+							attract = rSquaredInv * rSquaredInv * rSquaredInv;
+							repel = attract * attract;
+							potentialE += 22.407 * (4.0 *(repel - attract)) - 22.407 * pEatCutoff;
+							fOverR = 24.0 * 22.407 * ((2.0 * repel) - attract) / rSquared;
+							fx = fOverR * dx;
+							fy = fOverR * dy;
+							fz = fOverR * dz;
+							ax4[i] += fx/32.75;  // add this force on to i's acceleration (m = 1)
+							ay4[i] += fy/32.75;
+							az4[i] += fz/32.75;
+							ax4[j] -= fx/32.75;  // Newton's 3rd law
+							ay4[j] -= fy/32.75;
+							az4[j] -= fz/32.75;
+						}
+					}
+				}
+			}
+		} else if (potentialSelect.options[potentialSelect.selectedIndex].value == "Ideal Gas"){
+
+		} else if (potentialSelect.options[potentialSelect.selectedIndex].value == "Hard Sphere"){
+			
+			var HehardCutoff2 = 0.29907;
+			var NehardCutoff2 = 0.371338;
+			var ArhardCutoff2 = 0.539307;
+			var XehardCutoff2 = 0.711914;
+			for (var i=0; i<N; i++) {			// simple double-loop over atoms for small system
+				for (var j=0; j<i; j++) {
+				dx = x[i] - x[j];
+				dy = y[i] - y[j];
+				dz = z[i] - z[j];
+				rSquared = dx * dx + dy * dy + dz * dz;
+					if (rSquared < HehardCutoff2) {
+						rSquaredInv = HehardCutoff2 / rSquared;
+						attract = rSquaredInv * rSquaredInv * rSquaredInv * rSquaredInv;
+						repel = attract * attract * attract;
+						potentialE += (4.0 * repel) - 4.0;
+						fOverR = 24.0 * (2.0 * repel) * rSquaredInv;
+						fx = fOverR * dx;
+						fy = fOverR * dy;
+						fz = fOverR * dz;
+						ax[i] += fx;  // add this force on to i's acceleration (m = 1)
+						ay[i] += fy;
+						az[i] += fz;
+						ax[j] -= fx;  // Newton's 3rd law
+						ay[j] -= fy;
+						az[j] -= fz;
+					}
+				}
+			}
+			for (var i=0; i<N2; i++) {			// simple double-loop over atoms for small system
+				for (var j=0; j<i; j++) {
+				dx = x2[i] - x2[j];
+				dy = y2[i] - y2[j];
+				dz = z2[i] - z2[j];
+				rSquared = dx * dx + dy * dy + dz * dz;
+					if (rSquared < NehardCutoff2) {
+						rSquaredInv = NehardCutoff2 / rSquared;
+						attract = rSquaredInv * rSquaredInv * rSquaredInv * rSquaredInv;
+						repel = attract * attract * attract;
+						potentialE += (4.0 * repel) - 4.0;
+						fOverR = 24.0 * (2.0 * repel) * rSquaredInv;
+						fx = fOverR * dx;
+						fy = fOverR * dy;
+						fz = fOverR * dz;
+						ax2[i] += fx;  // add this force on to i's acceleration (m = 1)
+						ay2[i] += fy;
+						az2[i] += fz;
+						ax2[j] -= fx;  // Newton's 3rd law
+						ay2[j] -= fy;
+						az2[j] -= fz;
+					}
+				}
+			}
+			for (var i=0; i<N3; i++) {			// simple double-loop over atoms for small system
+				for (var j=0; j<i; j++) {
+				dx = x3[i] - x3[j];
+				dy = y3[i] - y3[j];
+				dz = z3[i] - z3[j];
+				rSquared = dx * dx + dy * dy + dz * dz;
+					if (rSquared < ArhardCutoff2) {
+						rSquaredInv = ArhardCutoff2 / rSquared;
+						attract = rSquaredInv * rSquaredInv * rSquaredInv * rSquaredInv;
+						repel = attract * attract * attract;
+						potentialE += (4.0 * repel) - 4.0;
+						fOverR = 24.0 * (2.0 * repel) * rSquaredInv;
+						fx = fOverR * dx;
+						fy = fOverR * dy;
+						fz = fOverR * dz;
+						ax3[i] += fx;  // add this force on to i's acceleration (m = 1)
+						ay3[i] += fy;
+						az3[i] += fz;
+						ax3[j] -= fx;  // Newton's 3rd law
+						ay3[j] -= fy;
+						az3[j] -= fz;
+					}
+				}
+			}
+			for (var i=0; i<N4; i++) {			// simple double-loop over atoms for small system
+				for (var j=0; j<i; j++) {
+				dx = x4[i] - x4[j];
+				dy = y4[i] - y4[j];
+				dz = z4[i] - z4[j];
+				rSquared = dx * dx + dy * dy + dz * dz;
+					if (rSquared < XehardCutoff2) {
+						rSquaredInv = XehardCutoff2 / rSquared;
+						attract = rSquaredInv * rSquaredInv * rSquaredInv * rSquaredInv;
+						repel = attract * attract * attract;
+						potentialE += (4.0 * repel) - 4.0;
+						fOverR = 24.0 * (2.0 * repel) * rSquaredInv;
+						fx = fOverR * dx;
+						fy = fOverR * dy;
+						fz = fOverR * dz;
+						ax4[i] += fx;  // add this force on to i's acceleration (m = 1)
+						ay4[i] += fy;
+						az4[i] += fz;
+						ax4[j] -= fx;  // Newton's 3rd law
+						ay4[j] -= fy;
+						az4[j] -= fz;
+					}
+				}
+			}
+
+		}//End Hard Sphere
+
+			pressure = 8.41249 * Math.pow(10,6) * wallForce / (6.0*boxWidth*boxWidth);	// instantaneous pressure
+			
+	}	// end of function computeAccelerations
+
+	// Compute statistical data from current system state:
+	function computeStats() {
+		kineticE = 0.0;
+		gravitationalE = 0.0;
+		momentumX = 0.0;
+		momentumY = 0.0;
+		momentumZ = 0.0;
+		var g = Number(getGravity());
+		for (var i=0; i<N; i++) {
+			kineticE += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]); 
+			gravitationalE += 0;// * amu * g * y[i]; //needs to be fixed
+			momentumX += vx[i];
+			momentumY += vy[i];
+			momentumZ += vz[i];
+		}
+		for (var i=0; i<N2; i++) {
+			kineticE += 2.5 * (vx2[i]*vx2[i] + vy2[i]*vy2[i] + vz2[i]*vz2[i]);
+			gravitationalE += 0;//* amu * g * y2[i];
+			momentumX += vx2[i];
+			momentumY += vy2[i];
+			momentumZ += vz2[i];
+		}
+		for (var i=0; i<N3; i++) {
+			kineticE += 5.0 * (vx3[i]*vx3[i] + vy3[i]*vy3[i] + vz3[i]*vz3[i]);
+			gravitationalE += 0;//* amu * g * y2[i];
+			momentumX += vx3[i];
+			momentumY += vy3[i];
+			momentumZ += vz3[i];
+		}
+		for (var i=0; i<N4; i++) {
+			kineticE += 16.375 * (vx4[i]*vx4[i] + vy4[i]*vy4[i] + vz4[i]*vz4[i]);
+			gravitationalE += 0;//* amu * g * y2[i];
+			momentumX += vx4[i];
+			momentumY += vy4[i];
+			momentumZ += vz4[i];
+		}
+		currentT = (2.0/3.0) * kineticE / (N + N2 + N3 + N4);
+		safetyCheck(currentT);
+	}
+
+
+	// Periodically update the temperature and pressure accumulators
+	function updateTandP() {
+		var sampleInterval = 0.1;	// more often than this would probably be pointless
+			sampleCount++;
+			sampleCount2++;
+			kineticE = 0.0;
+			for (var i=0; i<N; i++) kineticE += 0.5 * (vx[i]*vx[i] + vy[i]*vy[i] + vz[i]*vz[i]);
+			for (var i=0; i<N2; i++) kineticE += 2.5 * (vx2[i]*vx2[i] + vy2[i]*vy2[i] + vz2[i]*vz2[i]);
+			for (var i=0; i<N3; i++) kineticE += 5.0 * (vx3[i]*vx3[i] + vy3[i]*vy3[i] + vz3[i]*vz3[i]);
+			for (var i=0; i<N4; i++) kineticE += 16.375 * (vx4[i]*vx4[i] + vy4[i]*vy4[i] + vz4[i]*vz4[i]);
+			currentT = (2.0/3.0) * kineticE / (N + N2 + N3 + N4);
+			totalT += currentT;
+			safetyCheck(currentT);
+			averageT = totalT / sampleCount;
+			totalP += pressure;
+			if (sampleCount/44.0 == Math.round(sampleCount/44.0)){
+				intervalpressure = 0;
+				sampleCount2 = 0;
+			}
+			intervalpressure += pressure;
+			averageintervalpressure = intervalpressure/(sampleCount2/250);
+			averageP = totalP/(sampleCount/250.0); //250 samples per unit time
+			currentE = kineticE + gravitationalE + potentialE;
+			sumE += currentE;
+			averageE = sumE/sampleCount;
+			currentV = 0.0167772 * (boxWidth*boxWidth*boxWidth);
+			totalV += currentV;
+			averageV = totalV/sampleCount;
+			lastSampleTime += sampleInterval;
+	}
+
+	// Check for run-away instability, and try to keep dt small enough to prevent it:
+	function safetyCheck(T) {
+		if (T > 1000) {	// handle run-away instability
+			running = false;
+			var alertString = "Oops! The simulation has become unstable.\n";
+			alertString += "Avoid placing atoms so they overlap, and use a smaller time step at high temperature.\n";
+			alertString += "Click OK to restart.";
+			alert(alertString);
+			restart();
+		} else {
+			var safetyFactor = 4000;
+			var dt = 0.0;//Number(dtSlider.value);
+			if ((T > 1/(safetyFactor*dt*dt)) && (!dtFixed.checked)) {
+				var newdt = Math.max(Math.sqrt(1/(safetyFactor*T)) - 0.001, 0.001);
+				//dtSlider.value = newdt.toFixed(3);
+				dtReadout.innerHTML = newdt.toFixed(3);
+			}
+		}
+	}
+
+	// Function to reset the time and the averages for temperature and pressure:
+	function reset() {
+		time = 0.0; 
+		totalT = 0.0; 
+		totalP = 0.0;
+		sumE = 0.0;
+		totalV = 0.0; 
+		sampleCount = 0; 
+		lastSampleTime = 0.0;
+		lastAutoRecordTime = 0.0;
+		showStats();
+	}
+
+	// Show control panel to fix the clicked atom's temperature:
+	function showFixTempPanel(index) {
+		atomNumber.innerHTML = index;
+		var fixedTListIndex = -1;
+		for (var i=0; i<fixedTList.length; i++) {	// see if this atom already has a fixed temperature
+			if (fixedTList[i].pointer == index) {
+				fixedTListIndex = i;
+				break;
+			}
+		}
+		if (fixedTListIndex == -1) {
+			tempSlider.value = 0;
+		} else {
+			tempSlider.value = fixedTList[fixedTListIndex].temp;
+		}
+		atomTemp.innerHTML = Number(tempSlider.value).toFixed(2);
+		fixTPanel.style.left = Math.round(x[index]*pxPerUnit + 5) + "px";
+		fixTPanel.style.top = Math.round(canvas.height - y[index]*pxPerUnit + 10) + "px";
+		fixTPanel.style.display = "block";
+	}
+
+	// Respond to atom temperature slider:
+	function changeAtomTemp() {
+		atomTemp.innerHTML = Number(tempSlider.value).toFixed(2);
+	}
+
+	// ------------------------------ BUTTON AND SLIDER FUNCTIONS ------------------------------
+
+	// Function to start or pause the simulation:
+	function startStop() {
+		startButton.className = "custombutton";		// revert to default color after first press
+		running = !running;
+		if (running) {
+			startButton.innerHTML = "Pause";
+			resetStepsPerSec();
+			simulate();
+		} else {
+			startButton.innerHTML = "Resume";
+		}
+	}
+
+	// Function to reset the performance counters:
+	function resetStepsPerSec() {
+		stepCount = 0;
+		startTime = (new Date()).getTime();
+	}
+
+	// Function to change all speeds by a given factor (called by button presses):
+	function speedFactor(factor) {
+		for (var i=0; i<N; i++) {
+			vx[i] *= factor;
+			vy[i] *= factor;
+			vz[i] *= factor;
+		}
+		for (var i=0; i<N2; i++){	
+			vx2[i] *= factor;
+			vy2[i] *= factor;
+			vz2[i] *= factor;
+		}
+		for (var i=0; i<N3; i++){
+			vx3[i] *= factor;
+			vy3[i] *= factor;
+			vz3[i] *= factor;
+		}
+		for (var i=0; i<N4; i++){
+			vx4[i] *= factor;
+			vy4[i] *= factor;
+			vz4[i] *= factor;
+		}
+		reset();
+		resetStepsPerSec();
+		paintCanvas();
+	}
+
+	// Function to restart, placing all the molecules in rows:
+	function restart() {
+		N = 0;
+		N2 = 0;
+		N3 = 0;
+		N4 = 0;
+		fixedCount = 0;
+		bondCount = 0;
+		changeN();
+		changeN2();
+		changeN3();
+		changeN4();
+		//dtSlider.value = 0.02; changedt();
+		//reset();	// redundant because it's called by changeN, right?
+		resetStepsPerSec();
+		if (!running) startButton.innerHTML = "Start";
+	}
+
+	// kludge for iOS Safari:
+	function deselectBonds() {
+		bondSelect.selectedIndex = 0;
+	}
+
+	function changeT(dT){
+		canonT = Number(TESlider.value);
+		if (dT!= null){
+			if ((canonT + dT < TESlider.min) || (canonT + dT > TESlider.max)) return;
+			TESlider.value = canonT + dT;
+			canonT = canonT + dT;
+		}
+		TReadout.innerHTML = canonT;
+	}
+
+	function changeP(){
+		isoP = Number(pressureSlider.value);
+		pressureReadout.innerHTML = isoP;
+	}
+
+	// Change number of atoms in response to slider adjustment or +/- button click:
+	function changeN(dN) {
+		if (dN != null) {
+			if ((N + dN < nSlider.min) || (N + dN > nSlider.max)) return;
+			nSlider.value = N + dN;
+		}
+		fixTPanel.style.display = "none";
+		var newN = Number(nSlider.value);
+		if (newN < N) {
+			N = newN;
+			if (selectedAtom >= N) {
+				selectedAtom = -1;
+				selectDataPanel.style.display = "none";
+			}
+		}
+
+		if (newN > N) {
+			addAtoms(newN);
+			nSlider.value = N;
+		}
+		nReadout.innerHTML = N;
+		computeAccelerations();
+		reset();
+		if (selectedAtom >= N) {
+			selectedAtom = -1;
+			selectDataPanel.style.display = "none";
+		}
+		resetStepsPerSec();
+		paintCanvas();
+	}
+	// Now change N2
+	function changeN2(dN2) {
+		if (dN2 != null) {
+			if ((N2 + dN2 < n2Slider.min) || (N2 + dN2> n2Slider.max)) return;
+			n2Slider.value = N2 + dN2;
+		}
+		fixTPanel.style.display = "none";
+		var newN2 = Number(n2Slider.value);
+		if (newN2 < N2) {
+			N2 = newN2;
+			if (selectedAtom >= N2) {
+				selectedAtom = -1;
+				selectDataPanel.style.display = "none";
+			}
+		}
+		if (newN2 > N2) {
+			addAtoms2(newN2);
+			n2Slider.value = N2;
+		}
+		n2Readout.innerHTML = N2;
+		computeAccelerations();
+		reset();
+		if (selectedAtom >= N2) {
+			selectedAtom = -1;
+			selectDataPanel.style.display = "none";
+		}
+		resetStepsPerSec();
+		paintCanvas();
+	}		
+	// Now change N3
+	function changeN3(dN3) {
+		if (dN3 != null) {
+			if ((N3 + dN3 < n3Slider.min) || (N3 + dN3> n3Slider.max)) return;
+			n3Slider.value = N3 + dN3;
+		}
+		fixTPanel.style.display = "none";
+		var newN3 = Number(n3Slider.value);
+		if (newN3 < N3) {
+			N3 = newN3;
+			if (selectedAtom >= N3) {
+				selectedAtom = -1;
+				selectDataPanel.style.display = "none";
+			}
+		}
+		if (newN3 > N3) {
+			addAtoms3(newN3);
+			n3Slider.value = N3;
+		}
+		n3Readout.innerHTML = N3;
+		computeAccelerations();
+		reset();
+		if (selectedAtom >= N3) {
+			selectedAtom = -1;
+			selectDataPanel.style.display = "none";
+		}
+		resetStepsPerSec();
+		paintCanvas();
+	}		
+	// Now change N4
+	function changeN4(dN4) {
+		if (dN4 != null) {
+			if ((N4 + dN4 < n4Slider.min) || (N4 + dN4> n4Slider.max)) return;
+			n4Slider.value = N4 + dN4;
+		}
+		fixTPanel.style.display = "none";
+		var newN4 = Number(n4Slider.value);
+		if (newN4 < N4) {
+			N4 = newN4;
+			if (selectedAtom >= N4) {
+				selectedAtom = -1;
+				selectDataPanel.style.display = "none";
+			}
+		}
+		if (newN4 > N4) {
+			addAtoms4(newN4);
+			n4Slider.value = N4;
+		}
+		n4Readout.innerHTML = N4;
+		computeAccelerations();
+		reset();
+		if (selectedAtom >= N4) {
+			selectedAtom = -1;
+			selectDataPanel.style.display = "none";
+		}
+		resetStepsPerSec();
+		paintCanvas();
+	}
+
+	// Change the size of the box:
+	function changeSize() {
+		var newSize = Number(sizeSlider.value);
+		var oldSize = boxWidth;
+		if (newSize == oldSize) return;
+		if (running) {	// in this case we'll do it slowly via resizeStep()
+			if (targetSize != boxWidth) {	// abort if a resizing via resizeStep is already in progress
+				sizeSlider.value = targetSize;
+				return;
+			}
+			if (newSize < oldSize) {
+				newSize = oldSize - 1;
+			} else {
+				newSize = oldSize + 1;
+			}
+			var minSize = 0.9 * Math.sqrt(N);
+			if (newSize < minSize) {		// abort if new size would be too small to hold all the atoms
+				sizeSlider.value = oldSize;
+				return;
+			}
+			targetSize = newSize;
+			sizeSlider.value = newSize;
+			resizeStep();
+		} else {							// if not running, do the resize all at once
+			var offset = (newSize - oldSize) / 2.0;
+			for (var atom=0; atom<N; atom++) {
+				x[atom] += offset;
+				y[atom] += offset;
+				z[atom] += offset;
+			}
+			boxWidth = newSize;
+			pxPerUnit = canvas.width / boxWidth;
+			targetSize = boxWidth;
+			computeAccelerations();
+			computeStats();
+			paintCanvas();
+			reset();
+			resetStepsPerSec();
+		}
+		var volume = 0.0167772 * Math.round(newSize * newSize * newSize);
+		sizeReadout.innerHTML =  volume.toFixed(3);
+	}
+
+	// Function to take one step toward changing the box size, if the time is right:
+	function resizeStep() {
+		if (boxWidth != targetSize) {
+			var epsilon = 0.00001;		// avoids round-off error
+			if (sizeStepTimer > epsilon) {
+				sizeStepTimer -= 0.0;//Number(dtSlider.value);
+			} else {
+				var stepSize = 0.004;			// size of each step as we change boxWidth
+				if (boxWidth > targetSize) stepSize = -stepSize;
+				var newSize = boxWidth + stepSize;
+				var offset = (newSize - boxWidth) / 2.0;
+				for (var atom=0; atom<N; atom++) {
+					x[atom] += offset;
+					y[atom] += offset;
+					z[atom] += offset;
+				}
+				boxWidth = newSize;
+				if (Math.abs(boxWidth - targetSize) < epsilon) {
+					boxWidth = targetSize;
+				} else {
+					sizeStepTimer = 0.01;	// this value controls the rate of resizing
+				}
+				pxPerUnit = canvas.width / boxWidth;
+				computeAccelerations();
+				computeStats();
+				reset();
+				resetStepsPerSec();
+			}
+		}
+	}
+
+	// Timed function to allow another size decrease:
+	function allowSizeDecrease() {
+		recentSizeDecrease = false;
+	}
+
+	// Function to return gravitational constant:
+	function getGravity() {
+		if (gravx10.checked) {
+			return gravSlider.value * 10;
+		} else {
+			return gravSlider.value;
+		}
+	}
+
+	// Function to set the gravitational constant:
+	function setGravity(newGrav) {
+		if (newGrav == null) {		// this happens when user adjusts the slider
+			newGrav = gravSlider.value;
+			if (gravx10.checked) newGrav *= 10;
+			reset();
+			resetStepsPerSec();
+		} else {
+			if (newGrav > 0.1) {
+				gravx10.checked = true;
+				gravSlider.value = newGrav/10;
+			} else {
+				gravx10.checked = false;
+				gravSlider.value = newGrav;
+			}
+		}
+		gravReadout.innerHTML = Number(newGrav).toFixed(3);
+	}
+
+	// Change the dt setting:
+	/*function changedt() {
+		dtReadout.innerHTML = Number(dtSlider.value).toFixed(3);
+	}*/
+
+	// Change the number of steps per frame:
+	function changeSteps() {
+		stepsReadout.innerHTML = stepsSlider.value;
+		resetStepsPerSec();
+	}
+
+	// Function called when atom color menu is changed:
+	function assignRandomColors() {
+		if (mColorSelect.options[mColorSelect.selectedIndex].text == "Random") {
+			for (var atom=0; atom<nMax; atom++) {
+				atomColor[atom] = randomHue();
+			}
+		}
+		paintCanvas();
+	}
+
+	// Function to convert a number to a two-digit hex string (from stackoverflow):
+	function twoDigitHex(c) {
+		var hex = c.toString(16);
+		return hex.length == 1 ? "0" + hex : hex;
+	}
+
+	// Function to generate a random hue as hex string:
+	function randomHue() {
+		var hue = Math.random();
+		var r, g, b;
+		if (hue < 1/6) {
+			r = 255; g = Math.round(hue*6*255); b = 0;			// red to yellow
+		} else if (hue < 1/3) {
+			r = Math.round((1/3 - hue)*6*255); g = 255; b = 0;	// yellow to green
+		} else if (hue < 1/2) {
+			r = 0; g = 255; b = Math.round((hue - 1/3)*6*255);	// green to cyan
+		} else if (hue < 2/3) {
+			r = 0; g = Math.round((2/3 - hue)*6*255); b = 255;	// cyan to blue
+		} else if (hue < 5/6) {
+			r = Math.round((hue - 2/3)*6*255); g = 0; b = 255;	// blue to magenta
+		} else {
+			r = 255; g = 0; b = Math.round((1 - hue)*6*255);	// magenta to red
+		}
+		return "#" + twoDigitHex(r) + twoDigitHex(g) + twoDigitHex(b);
+	}
+
+	// Add atom to the simulation until N == newN (if there's room):
+	// (This algorithm is inefficient when it doesn't matter and efficient when it does.)
+	function addAtoms(newN) 
+    {
+		var cellSize = 2.1;		// must be at least 1.0, preferably a little more
+		var nCells = Math.floor(boxWidth / cellSize);	// number of cells in a row
+		var occupied = new Array(nCells*nCells*nCells);		// keeps track of which cells are occupied
+		for (var c=0; c<nCells*nCells*nCells; c++) occupied[c] = false;
+		for (var i=0; i<N; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N2; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x2[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y2[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z2[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N3; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x3[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y3[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z3[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N4; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x4[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y4[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z4[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+
+		var epsilon = 0.01;		// small distance for random offset to break symmetry
+		// Now loop over cells and add atoms where there's room, up to newN:
+
+        if (initial_pos.options[initial_pos.selectedIndex].value == "layers")
+        {
+            for (var cellZ=0; cellZ<nCells; cellZ++) 
+            {
+                for (var cellY=0; cellY<nCells; cellY++) 
+                {
+                    for (var cellX=0; cellX<nCells; cellX++) 
+                    {
+                        if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+                        {
+                            x[N] = (cellX+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            y[N] = (cellY+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            z[N] = (cellZ+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            vx[N] = 0.0; vy[N] = 0.0; vz[N] = 0.0;
+                            ax[N] = 0.0; ay[N] = 0.0; az[N] = 0.0;
+                            occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+                            N++;
+                            if (N == newN) return;
+                        }
+                    }
+                }
+            }
+        }
+        else if (initial_pos.options[initial_pos.selectedIndex].value == "random"){
+        	if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+	            while (true)
+	            {
+	                var cellX = Math.round(Math.random() * nCells);
+	                var cellY = Math.round(Math.random() * nCells);
+	                var cellZ = Math.round(Math.random() * nCells);
+	                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+	                {
+	                    x[N] = (cellX+0.5)*cellSize; // + (Math.random()-0.5)*epsilon;
+	                    y[N] = (cellY+0.5)*cellSize; // + (Math.random()-0.5)*epsilon;
+	                    z[N] = (cellZ+0.5)*cellSize; // + (Math.random()-0.5)*epsilon;
+	                    var e1, e2, e3, e4, w, w2;
+						do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+						} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+						} while (w2 >= 1.0);
+						var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+						var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+						vx[N] = u * e1 * Math.sqrt(4.892368);
+						vy[N] = u * e2 * Math.sqrt(4.892368);
+						vz[N] = u2 * e3 * Math.sqrt(4.892368);
+	                    ax[N] = 0.0; ay[N] = 0.0; az[N] = 0.0;
+	                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+	                    N++;
+	                    if (N == newN) return;
+	                }   
+	            }
+        	} else
+	       		{
+		        	while (true)
+		            {
+		                var cellX = Math.round(Math.random() * nCells);
+		                var cellY = Math.round(Math.random() * nCells);
+		                var cellZ = Math.round(Math.random() * nCells);
+		                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+		                {
+		                    x[N] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    y[N] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    z[N] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    var e1, e2, e3, e4, w, w2;
+							do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+							} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+							} while (w2 >= 1.0);
+							var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+							var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+							vx[N] = u * e1 * Math.sqrt(Number(TESlider.value)/10.22);
+							vy[N] = u * e2 * Math.sqrt(Number(TESlider.value)/10.22);
+							vz[N] = u2 * e3 * Math.sqrt(Number(TESlider.value)/10.22);
+		                    ax[N] = 0.0; ay[N] = 0.0; az[N] = 0.0;
+		                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+		                    N++;
+		                    if (N == newN) return;
+		                }
+		           }
+	        	}
+        }
+	}
+
+		function addAtoms2(newN2) 
+    {
+		var cellSize = 2.1;		// must be at least 1.0, preferably a little more
+		var nCells = Math.floor(boxWidth / cellSize);	// number of cells in a row
+		var occupied = new Array(nCells*nCells*nCells);		// keeps track of which cells are occupied
+		for (var c=0; c<nCells*nCells*nCells; c++) occupied[c] = false;
+				for (var i=0; i<N; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N2; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x2[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y2[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z2[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N3; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x3[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y3[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z3[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N4; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x4[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y4[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z4[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		var epsilon = 0.01;		// small distance for random offset to break symmetry
+		// Now loop over cells and add atoms where there's room, up to newN2:
+        if (initial_pos.options[initial_pos.selectedIndex].value == "layers")
+        {
+            for (var cellZ=0; cellZ<nCells; cellZ++) 
+            {
+                for (var cellY=0; cellY<nCells; cellY++) 
+                {
+                    for (var cellX=0; cellX<nCells; cellX++) 
+                    {
+                        if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+                        {
+                            x2[N2] = (cellX+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            y2[N2] = (cellY+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            z2[N2] = 10.0 + (cellZ+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            vx2[N2] = 0.0; vy2[N2] = 0.0; vz2[N2] = 0.0;
+                            ax2[N2] = 0.0; ay2[N2] = 0.0; az2[N2] = 0.0;
+                            occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+                            N2++;
+                            if (N2 == newN2) return;
+                        }
+                    }
+                }
+            }
+        }
+        else if (initial_pos.options[initial_pos.selectedIndex].value == "random"){
+        	if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+	            while (true)
+	            {
+	                var cellX = Math.round(Math.random() * nCells);
+	                var cellY = Math.round(Math.random() * nCells);
+	                var cellZ = Math.round(Math.random() * nCells);
+	                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+	                {
+	                    x2[N2] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    y2[N2] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    z2[N2] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    var e1, e2, e3, e4, w, w2;
+						do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+						} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+						} while (w2 >= 1.0);
+						var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+						var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+						vx2[N2] = u * e1 * Math.sqrt(0.97847358);
+						vy2[N2] = u * e2 * Math.sqrt(0.97847358);
+						vz2[N2] = u2 * e3 * Math.sqrt(0.97847358);
+	                    ax2[N2] = 0.0; ay2[N2] = 0.0; az2[N2] = 0.0;
+	                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+	                    N2++;
+	                    if (N2 == newN2) return;
+	                }
+	            }
+        } else
+	        {
+		        	while (true)
+		            {
+		                var cellX = Math.round(Math.random() * nCells);
+		                var cellY = Math.round(Math.random() * nCells);
+		                var cellZ = Math.round(Math.random() * nCells);
+		                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+		                {
+		                    x2[N2] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    y2[N2] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    z2[N2] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    var e1, e2, e3, e4, w, w2;
+							do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+							} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+							} while (w2 >= 1.0);
+							var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+							var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+							vx2[N2] = u * e1 * Math.sqrt(Number(TESlider.value)/51.1);
+							vy2[N2] = u * e2 * Math.sqrt(Number(TESlider.value)/51.1);
+							vz2[N2] = u2 * e3 * Math.sqrt(Number(TESlider.value)/51.1);
+		                    ax2[N2] = 0.0; ay2[N2] = 0.0; az2[N2] = 0.0;
+		                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+		                    N2++;
+		                    if (N2 == newN2) return;
+		                }
+		           }
+	        }
+	    }
+	}
+
+	function addAtoms3(newN3) 
+    {
+		var cellSize = 2.1;		// must be at least 1.0, preferably a little more
+		var nCells = Math.floor(boxWidth / cellSize);	// number of cells in a row
+		var occupied = new Array(nCells*nCells*nCells);		// keeps track of which cells are occupied
+		for (var c=0; c<nCells*nCells*nCells; c++) occupied[c] = false;
+				for (var i=0; i<N; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N2; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x2[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y2[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z2[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N3; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x3[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y3[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z3[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N4; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x4[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y4[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z4[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		var epsilon = 0.01;		// small distance for random offset to break symmetry
+		// Now loop over cells and add atoms where there's room, up to newN3:
+        if (initial_pos.options[initial_pos.selectedIndex].value == "layers")
+        {
+            for (var cellZ=0; cellZ<nCells; cellZ++) 
+            {
+                for (var cellY=0; cellY<nCells; cellY++) 
+                {
+                    for (var cellX=0; cellX<nCells; cellX++) 
+                    {
+                        if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+                        {
+                            x3[N3] = (cellX+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            y3[N3] = (cellY+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            z3[N3] = 20.0 + (cellZ+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            vx3[N3] = 0.0; vy3[N3] = 0.0; vz3[N3] = 0.0;
+                            ax3[N3] = 0.0; ay3[N3] = 0.0; az3[N3] = 0.0;
+                            occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+                            N3++;
+                            if (N3 == newN3) return;
+                        }
+                    }
+                }
+            }
+        }
+        else if (initial_pos.options[initial_pos.selectedIndex].value == "random"){
+        	if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+	            while (true)
+	            {
+	                var cellX = Math.round(Math.random() * nCells);
+	                var cellY = Math.round(Math.random() * nCells);
+	                var cellZ = Math.round(Math.random() * nCells);
+	                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+	                {
+	                    x3[N3] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    y3[N3] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    z3[N3] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    var e1, e2, e3, e4, w, w2;
+						do {
+						e1 = 2 * Math.random() - 1;
+						e2 = 2 * Math.random() - 1;
+						w = e1 * e1 + e2 * e2;
+						} while (w >= 1.0);
+						do {
+						e3 = 2 * Math.random() - 1;
+						e4 = 2 * Math.random() - 1;
+						w2 = e3 * e3 + e4 * e4;
+						} while (w2 >= 1.0);
+						var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+						var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+						vx3[N3] = u * e1 * Math.sqrt(0.4892368);
+						vy3[N3] = u * e2 * Math.sqrt(0.4892368);
+						vz3[N3] = u2 * e3 * Math.sqrt(0.4892368);
+	                    ax3[N3] = 0.0; ay3[N3] = 0.0; az3[N3] = 0.0;
+	                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+	                    N3++;
+	                    if (N3 == newN3) return;
+	                }
+	            }
+        	}  else
+	        	{
+		        	while (true)
+		            {
+		                var cellX = Math.round(Math.random() * nCells);
+		                var cellY = Math.round(Math.random() * nCells);
+		                var cellZ = Math.round(Math.random() * nCells);
+		                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+		                {
+		                    x3[N3] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    y3[N3] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    z3[N3] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    var e1, e2, e3, e4, w, w2;
+							do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+							} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+							} while (w2 >= 1.0);
+							var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+							var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+							vx3[N3] = u * e1 * Math.sqrt(Number(TESlider.value)/102.2);
+							vy3[N3] = u * e2 * Math.sqrt(Number(TESlider.value)/102.2);
+							vz3[N3] = u2 * e3 * Math.sqrt(Number(TESlider.value)/102.2);
+		                    ax3[N3] = 0.0; ay3[N3] = 0.0; az3[N3] = 0.0;
+		                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+		                    N3++;
+		                    if (N3 == newN3) return;
+		                }
+		            }
+	        	}
+        }
+	}
+
+	function addAtoms4(newN4) 
+    {
+		var cellSize = 2.1;		// must be at least 1.0, preferably a little more
+		var nCells = Math.floor(boxWidth / cellSize);	// number of cells in a row
+		var occupied = new Array(nCells*nCells*nCells);		// keeps track of which cells are occupied
+		for (var c=0; c<nCells*nCells*nCells; c++) occupied[c] = false;
+				for (var i=0; i<N; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N2; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x2[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y2[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z2[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N3; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x3[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y3[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z3[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		for (var i=0; i<N4; i++) {	// loop over all atoms and label occupied cells
+			var scaledX = x4[i]/cellSize;	// x coordinate in units of cellSize
+			if (scaledX < 0.5) scaledX = 0.5;
+			if (scaledX > nCells-0.5) scaledX = nCells-0.5;
+			var scaledY = y4[i]/cellSize;
+			if (scaledY < 0.5) scaledY = 0.5;
+			if (scaledY > nCells-0.5) scaledY = nCells-0.5;
+			var scaledZ = z4[i]/cellSize;
+			if (scaledZ < 0.5) scaledZ = 0.5;
+			if (scaledZ > nCells-0.5) scaledZ = nCells-0.5;
+			var cellX = Math.round(scaledX-0.5);	// integer cell number for this location
+			var cellY = Math.round(scaledY-0.5);
+			var cellZ = Math.round(scaledZ-0.5);
+			// Check if atom protrudes into neighboring cells:
+			var xProtrude = 0;
+			if ((cellX+1-scaledX)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				xProtrude = 1;
+			} else if ((scaledX-cellX)*cellSize < 0.5) {		// if it's sticking past left edge...
+				xProtrude = -1;
+			}
+			var yProtrude = 0;
+			if ((cellY+1-scaledY)*cellSize < 0.5) {		// if it's sticking out past top edge of cell...
+				yProtrude = 1;
+			} else if ((scaledY-cellY)*cellSize < 0.5) {		// if it's sticking past bottom edge...
+				yProtrude = -1;
+			}
+			var zProtrude = 0;
+			if ((cellZ+1-scaledZ)*cellSize < 0.5) {		// if it's sticking out past right edge of cell...
+				zProtrude = 1;
+			} else if ((scaledZ-cellZ)*cellSize < 0.5) {		// if it's sticking past left edge...
+				zProtrude = -1;
+			}
+			// Finally, label the occupied cells (possibly as many as four):
+			occupied[ cellX            + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[ cellX            + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells* cellZ           ] = true;
+			occupied[(cellX+xProtrude) + nCells* cellY            + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[ cellX            + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+			occupied[(cellX+xProtrude) + nCells*(cellY+yProtrude) + nCells*nCells*(cellZ+zProtrude)] = true;
+		}
+		var epsilon = 0.01;		// small distance for random offset to break symmetry
+		// Now loop over cells and add atoms where there's room, up to newN:
+
+        if (initial_pos.options[initial_pos.selectedIndex].value == "layers")
+        {
+            for (var cellZ=0; cellZ<nCells; cellZ++) 
+            {
+                for (var cellY=0; cellY<nCells; cellY++) 
+                {
+                    for (var cellX=0; cellX<nCells; cellX++) 
+                    {
+                        if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+                        {
+                            x4[N4] = (cellX+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            y4[N4] = (cellY+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            z4[N4] = 30.0 + (cellZ+0.5)*cellSize + (Math.random()-0.5)*epsilon;
+                            vx4[N4] = 0.0; vy4[N4] = 0.0; vz4[N4] = 0.0;
+                            ax4[N4] = 0.0; ay4[N4] = 0.0; az4[N4] = 0.0;
+                            occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+                            N4++;
+                            if (N4 == newN4) return;
+                        }
+                    }
+                }
+            }
+        }
+        else if (initial_pos.options[initial_pos.selectedIndex].value == "random"){
+	        if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+	            while (true)
+	            {
+	                var cellX = Math.round(Math.random() * nCells);
+	                var cellY = Math.round(Math.random() * nCells);
+	                var cellZ = Math.round(Math.random() * nCells);
+	                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+	                {
+	                    x4[N4] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    y4[N4] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    z4[N4] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+	                    var e1, e2, e3, e4, w, w2;
+						do {
+						e1 = 2 * Math.random() - 1;
+						e2 = 2 * Math.random() - 1;
+						w = e1 * e1 + e2 * e2;
+						} while (w >= 1.0);
+						do {
+						e3 = 2 * Math.random() - 1;
+						e4 = 2 * Math.random() - 1;
+						w2 = e3 * e3 + e4 * e4;
+						} while (w2 >= 1.0);
+						var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+						var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+						vx4[N4] = u * e1 * Math.sqrt(0.1493853);
+						vy4[N4] = u * e2 * Math.sqrt(0.1493853);
+						vz4[N4] = u2 * e3 * Math.sqrt(0.1493853);
+	                    ax4[N4] = 0.0; ay4[N4] = 0.0; az4[N4] = 0.0;
+	                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+	                    N4++;
+	                    if (N4 == newN4) return;
+	                }
+	            }
+	        } else
+	        	{
+		        	while (true)
+		            {
+		                var cellX = Math.round(Math.random() * nCells);
+		                var cellY = Math.round(Math.random() * nCells);
+		                var cellZ = Math.round(Math.random() * nCells);
+		                if (!occupied[cellX + nCells*cellY + nCells*nCells*cellZ]) 
+		                {
+		                    x4[N4] = (cellX+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    y4[N4] = (cellY+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    z4[N4] = (cellZ+0.5)*cellSize;// + (Math.random()-0.5)*epsilon;
+		                    var e1, e2, e3, e4, w, w2;
+							do {
+							e1 = 2 * Math.random() - 1;
+							e2 = 2 * Math.random() - 1;
+							w = e1 * e1 + e2 * e2;
+							} while (w >= 1.0);
+							do {
+							e3 = 2 * Math.random() - 1;
+							e4 = 2 * Math.random() - 1;
+							w2 = e3 * e3 + e4 * e4;
+							} while (w2 >= 1.0);
+							var u = Math.sqrt(-2*Math.log(w)/w);	// polar Box-Muller transformation to get Gaussian distribution
+							var u2 = Math.sqrt(-2*Math.log(w2)/w2);
+							vx4[N4] = u * e1 * Math.sqrt(Number(TESlider.value)/334.7);
+							vy4[N4] = u * e2 * Math.sqrt(Number(TESlider.value)/334.7);
+							vz4[N4] = u2 * e3 * Math.sqrt(Number(TESlider.value)/334.7);
+		                    ax4[N4] = 0.0; ay4[N4] = 0.0; az4[N4] = 0.0;
+		                    occupied[cellX + nCells*cellY + nCells*nCells*cellZ] = true;
+		                    N4++;
+		                    if (N4 == newN4) return;
+		                }
+		            }
+	        	}
+        }
+	}
+	
+	// Show or hide the data panel
+	/*function showDataPanel() {
+		if (moreButton.innerHTML.search("Data") > -1) {
+			dataPanel.style.display = "block";
+			moreButton.innerHTML = "\u2191 Hide \u2191";
+		} else {
+			dataPanel.style.display = "none";
+			moreButton.innerHTML = "\u2193 Data \u2193";
+			autoDataSelect.selectedIndex = 0;	// stop auto data recording
+		}
+	}*/
+
+	// Respond to selection of data type by showing/hiding appropriate controls:
+	function dataSelectChange() {
+		if (dataSelect.options[dataSelect.selectedIndex].value == "system") {
+			allAtomsDataButtons.style.display = "none";
+			autoIntervalControl.style.display = "block";
+			moreDetailCheckPanel.style.display = "block";
+		} else if (dataSelect.options[dataSelect.selectedIndex].value == "selected") {
+			allAtomsDataButtons.style.display = "none";
+			autoIntervalControl.style.display = "block";
+			moreDetailCheckPanel.style.display = "none";
+		} else {
+			autoIntervalControl.style.display = "none";
+			moreDetailCheckPanel.style.display = "none";
+			allAtomsDataButtons.style.display = "block";
+			autoDataSelect.selectedIndex = 0;	// stop auto data recording
+		}
+	}
+
+	// Choose appropriate sliders for the given ensemble
+	function ensembleSlider(){
+		if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Microcanonical"){
+			TESlider.style.display = "none";
+			Tequals.style.display = "none";
+			sizeSlider.style.display = "block";
+			Vequals.style.display = "block";
+			Pequals.style.display = "none";
+			pressureSlider.style.display = "none";
+		} else
+			if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "Canonical"){
+			TESlider.style.display = "block";
+			Tequals.style.display = "block";
+			sizeSlider.style.display = "block";
+			Vequals.style.display = "block";
+			Pequals.style.display = "none";
+			pressureSlider.style.display = "none";
+			} else
+				if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "NPT"){
+				TESlider.style.display = "block";
+				Tequals.style.display = "block";
+				sizeSlider.style.display = "none";
+				Vequals.style.display = "none";
+				Pequals.style.display = "block";
+				pressureSlider.style.display = "block";
+				}
+	}
+
+	// Show various data in constantly-updated display lines:
+	function showStats() {
+		var totalE = kineticE + potentialE + gravitationalE;
+		energyReadout.innerHTML = "KE = " + kineticE.toFixed(2) +
+			", PE = " + potentialE.toFixed(2) + ", GE = " + gravitationalE.toFixed(2);
+		var elapsedTime = ((new Date()).getTime() - startTime) / 1000;	// time in seconds
+		energyReadout.innerHTML += ", Steps/s = " + Number(stepCount/elapsedTime).toFixed(0);
+		if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "NPT"){
+			dataReadout.innerHTML = "t=" + (1.7561*time).toFixed(2) + "ps, <";
+			dataReadout.innerHTML += "E>=" + (0.0001411382 * averageE).toFixed(3) + "aJ" + ",<";
+			dataReadout.innerHTML +="T>=" + (10.22 * averageT).toFixed(2) + "K" + ",<";
+			dataReadout.innerHTML += "V>=" + averageV.toFixed(2) + "nm<sup>3</sup>";
+		} else {
+			dataReadout.innerHTML = "t=" + (1.7561*time).toFixed(2) + "ps, <";
+			dataReadout.innerHTML += "E>=" + (0.0001411382 * averageE).toFixed(3) + "aJ" + ",<";
+			dataReadout.innerHTML +="T>=" + (10.22 * averageT).toFixed(2) + "K" + ",<";
+			dataReadout.innerHTML += "P>=" + averageP.toFixed(2) + "Pa";
+		}
+	}
+
+
+	// Write stats to data area:
+	function writeStats() {
+		var totalE = kineticE + potentialE + gravitationalE;
+		//var V = boxWidth * boxWidth * boxWidth;
+		if (dataSelect.options[dataSelect.selectedIndex].value == "system") {
+			if (dataArea.value.search("t\tN\tV") == -1) {
+				dataArea.value += ( 1.7561 * time).toFixed(3) + "\t\t" + (0.0001411382 *totalE).toFixed(6) + "\t\t" + (10.22 * currentT).toFixed(3) + "\t\t" + averageintervalpressure.toFixed(6) + "\t\t" + (currentV).toFixed(6) + "\t\t" + (N+N2+N3+N4) + "\t\t" + (0.0001411382 *averageE).toFixed(6) + "\t\t" + (10.22 * averageT).toFixed(6) + "\t\t" + averageP.toFixed(6) + "\t\t" + averageV.toFixed(6) + "\n";
+					if (ensembleSelect.options[ensembleSelect.selectedIndex].value == "NPT"){
+						dataArea2.value += "t (ps)\t\t" +( 1.7561 * time).toFixed(3) + "\n<E>(aJ)\t\t" + (0.0001411382*averageE).toFixed(3) + "\n<T>(K)\t\t" + (10.22 * averageT).toFixed(3) + "\n<V> (nm^3)\t" + (averageV).toFixed(3) + "\n";
+					} else {	
+						dataArea2.value += "t (ps)\t\t" +( 1.7561 * time).toFixed(3) + "\n<E>(aJ)\t\t" + (0.0001411382*averageE).toFixed(3) + "\n<T>(K)\t\t" + (10.22 * averageT).toFixed(3) + "\n<P>(Pa)\t\t" + averageP.toFixed(3) + "\nV (nm^3)\t" + (currentV).toFixed(3) + "\n";	
+					}
+			}
+			//dataArea.value += '\n';
+			dataArea.scrollTop = dataArea.scrollHeight;		// scroll so new line is always visible
+			dataArea2.value += '\n';
+			dataArea2.scrollTop = dataArea2.scrollHeight;
+		} else if (dataSelect.options[dataSelect.selectedIndex].value == "selected") {
+			if ((selectedAtom < 0) || (selectedAtom >= N)) {
+				dataArea.value = "Please select an atom.  First choose Select from the Mouse/touch popup.\n";
+				autoDataSelect.selectedIndex = 0;
+				return;
+			}
+			if (dataArea.value.search("t\tx\ty") == -1) {
+				dataArea.value = "t\tx\ty\tvx\tvy\n";
+			}
+			dataArea.value += time.toFixed(3) + '\t' + x[selectedAtom].toFixed(4) + '\t' + 
+				y[selectedAtom].toFixed(4) + '\t' + vx[selectedAtom].toFixed(4) + '\t' + vy[selectedAtom].toFixed(4) + '\n';
+			dataArea.scrollTop = dataArea.scrollHeight;		// scroll so new line is always visible
+		} else {	// otherwise "all atoms" is selected
+			showState();
+		}	
+
+	}
+
+	// Initiate auto data recording:
+	function autoDataSelectChange() {
+		lastAutoRecordTime = time;
+	}
+
+	// Automatically record data at selected interval:
+	function autoRecordData() {
+		var interval = Number(autoDataSelect.options[autoDataSelect.selectedIndex].value);
+		if (interval > 0) {
+			interval = interval/1.7561;//Math.max(interval, Number(dtSlider.value));	// interval can't be < dt
+			if (time - lastAutoRecordTime >= interval) {
+				computeStats();
+				writeStats();
+				lastAutoRecordTime += interval;
+			}
+		}
+	}
+
+	// Clear the data area
+	function clearDataArea() {
+		dataArea2.value = "";
+		if (dataSelect.options[dataSelect.selectedIndex].value == "system"){
+			dataArea.value = "t (ps)\t" + "\tE (aJ)\t" + "\tT (K)\t" + "\tP (Pa)\t" + "\tV (nm^3)\t" + "\tN\t" + "\t<E> (aJ)" + "\t<T> (K)\t" + "\t<P> (Pa)\t" + "\t<V> (nm^3)\n";
+		}else dataArea.value = "";
+	}
+
+	// Write the current system state to the data area:
+	function showState() {
+		if ( N > 0){
+			dataArea.value += "xHe \t  yHe \t  zHe \t  vxHe \t  vyHe \t  vzHe\n";
+			for (var i=0; i<N; i++) {
+				dataArea.value += x[i].toFixed(2) + "\t " + y[i].toFixed(2) + "\t " + z[i].toFixed(2) + "\t " + vx[i].toFixed(2) + "\t " + vy[i].toFixed(2) + "\t " + vz[i].toFixed(2) + "\n";
+			}
+			dataArea2.value += "xHe\tyHe\tzHe\n";
+			for (var i=0; i<N; i++) {
+				dataArea2.value += x[i].toFixed(3) + "\t" + y[i].toFixed(3) + "\t" + z[i].toFixed(3) + "\n";
+			}
+			dataArea2.value += "vxHe\tvyHe\tvzHe\n";
+			for (var i=0; i<N; i++){
+				dataArea2.value += vx[i].toFixed(3) + "\t" + vy[i].toFixed(3) + "\t" + vz[i].toFixed(3) + "\n";
+			}	
+		}
+		if ( N2 > 0){
+			dataArea.value += "xNe \t  yNe \t  zNe \t  vxNe \t  vyNe \t  vzNe\n";
+			for (var i=0; i<N2; i++) {
+				dataArea.value += x2[i].toFixed(2) + "\t " + y2[i].toFixed(2) + "\t " + z2[i].toFixed(2) + "\t " + vx2[i].toFixed(2) + "\t " + vy2[i].toFixed(2) + "\t " + vz2[i].toFixed(2) + "\n";
+			}
+			dataArea2.value += "xNe\tyNe\tzNe\n";
+			for (var i=0; i<N2; i++) {
+				dataArea2.value += x2[i].toFixed(3) + "\t" + y2[i].toFixed(3) + "\t" + z2[i].toFixed(3) + "\n";
+			}
+			dataArea2.value += "vxNe\tvyNe\tvzNe\n";
+			for (var i=0; i<N2; i++){
+				dataArea2.value += vx2[i].toFixed(3) + "\t" + vy2[i].toFixed(3) + "\t" + vz2[i].toFixed(3) + "\n";
+			}
+		}
+		if ( N3 > 0){
+			dataArea.value += "xAr \t  yAr \t  zAr \t  vxAr \t  vyAr \t  vzAr\n";
+			for (var i=0; i<N3; i++) {
+				dataArea.value += x3[i].toFixed(2) + "\t " + y3[i].toFixed(2) + "\t " + z3[i].toFixed(2) + "\t " + vx3[i].toFixed(2) + "\t " + vy3[i].toFixed(2) + "\t " + vz3[i].toFixed(2) + "\n";
+			}
+			dataArea2.value += "xAr\tyAr\tzAr\n";
+			for (var i=0; i<N3; i++) {
+				dataArea2.value += x3[i].toFixed(3) + "\t" + y3[i].toFixed(3) + "\t" + z3[i].toFixed(3) + "\n";
+			}
+			dataArea2.value += "vxAr\tvyAr\tvzAr\n";
+			for (var i=0; i<N3; i++){
+				dataArea2.value += vx3[i].toFixed(3) + "\t" + vy3[i].toFixed(3) + "\t" + vz3[i].toFixed(3) + "\n";
+			}
+		}
+		if ( N4 > 0){
+			dataArea.value += "xXe \t  yXe \t  zXe \t  vxXe \t  vyXe \t  vzXe\n";
+			for (var i=0; i<N4; i++) {
+				dataArea.value += x4[i].toFixed(2) + "\t " + y4[i].toFixed(2) + "\t " + z4[i].toFixed(2) + "\t " + vx4[i].toFixed(2) + "\t " + vy4[i].toFixed(2) + "\t " + vz4[i].toFixed(2) + "\n";
+			}
+			dataArea2.value += "xXe\tyXe\tzXe\n";
+			for (var i=0; i<N4; i++) {
+				dataArea2.value += x4[i].toFixed(3) + "\t" + y4[i].toFixed(3) + "\t" + z4[i].toFixed(3) + "\n";
+			}
+			dataArea2.value += "vxXe\tvyXe\tvzXe\n";
+			for (var i=0; i<N4; i++){
+				dataArea2.value += vx4[i].toFixed(3) + "\t" + vy4[i].toFixed(3) + "\t" + vz4[i].toFixed(3) + "\n";
+			}
+		}
+	}
+
+	// Read a new system state from the data area:
+	function inputState() {
+		fixTPanel.style.display = "none";
+		var lines = dataArea.value.replace(/\r\n/g, '\n').split('\n');	// split data into lines
+		var newN = Math.round(Number(lines[1].substr(lines[1].indexOf('=')+1)));	// extract N
+		if (newN < nSlider.min) newN = nSlider.min;
+		if (newN > nSlider.max) newN = nSlider.max;
+		N = newN;
+		if (newN2 < n2Slider.min) newN2 = n2Slider.min;
+		if (newN2 > n2Slider.max) newN2 = n2Slider.max;
+		N2 = newN2;
+		if (newN3 < n3Slider.min) newN3 = n3Slider.min;
+		if (newN3 > n3Slider.max) newN3 = n3Slider.max;
+		N3 = newN3;
+		if (newN4 < n4Slider.min) newN4 = n4Slider.min;
+		if (newN4 > n4Slider.max) newN4 = n4Slider.max;
+		N4 = newN4;
+		nSlider.value = N;
+		n2Slider.value = N2;
+		n3Slider.value = N3;
+		n4Slider.value = N4;
+		nReadout.innerHTML = N;
+		n2Readout.innerHTML = N2;
+		n3Readout.innerHTML = N3;
+		n4Readout.innerHTML = N4;
+		var newSize = Math.round(Number(lines[2].substr(lines[2].indexOf('=')+1)));	// extract box size
+		if (newSize < sizeSlider.min) newSize = sizeSlider.min;
+		if (newSize > sizeSlider.max) newSize = sizeSlider.max;
+		boxWidth = newSize;
+		targetSize = boxWidth;
+		pxPerUnit = canvas.width / boxWidth;
+		sizeSlider.value = boxWidth;
+		var volume = 0.0167772 * Math.round(boxWidth * boxWidth * boxWidth );
+		sizeReadout.innerHTML = " Volume = " + volume.tofixed(3) + "nm<sup>3</sup>";
+		var newG = Number(lines[3].substr(lines[3].indexOf('=')+1));	// extract gravity setting
+		if (newG < gravSlider.min) newG = gravSlider.min;
+		if (newG > gravSlider.max*10) newG = gravSlider.max*10;			// kludge to allow for x10 option
+		setGravity(newG);
+		/*var newdt = Number(lines[4].substr(lines[4].indexOf('=')+1));	// extract dt setting
+		if (newdt < dtSlider.min) newdt = dtSlider.min;
+		if (newdt > dtSlider.max) newdt = dtSlider.max;
+		dtSlider.value = newdt;
+		dtReadout.innerHTML = newdt;*/
+		var newSteps = Number(lines[5].substr(lines[5].indexOf('=')+1));	// extract steps per frame setting
+		if (newSteps < stepsSlider.min) newSteps = stepsSlider.min;
+		if (newSteps > stepsSlider.max) newSteps = stepsSlider.max;
+		stepsSlider.value = newSteps;
+		stepsReadout.innerHTML = newSteps;
+		for (var i=0; i<N; i++) {								// now extract molecule positions and velocities
+			var data = lines[i+7].split('\t');
+			x[i] = Number(data[0]); y[i] = Number(data[1]); z[i] = Number(data[2]);		// no validity checking here!
+			vx[i] = Number(data[3]); vy[i] = Number(data[4]); vz[i] = Number(data[5]);
+		}
+		fixedCount = 0;
+		var nextIndex = N + 7;	// index of next line, if any
+		if ((lines[nextIndex] != undefined) && (lines[nextIndex].search("anchored") > -1)) {		// if there are anchored atoms, extract their indices
+			fixedCount = Number(lines[nextIndex].substr(lines[nextIndex].indexOf('=')+1));
+			nextIndex++;
+			for (var i=0; i<fixedCount; i++) {
+				fixedList[i] = Number(lines[nextIndex]);
+				nextIndex++;
+			}
+		}
+		bondCount = 0;
+		if ((lines[nextIndex] != undefined) && (lines[nextIndex].search("bonded") > -1)) {		// if there are bonded pairs, extract their indices
+			bondCount = Number(lines[nextIndex].substr(lines[nextIndex].indexOf('=')+1));
+			nextIndex++;
+			for (var i=0; i<bondCount*2; i+=2) {
+				var bIndex = lines[nextIndex].split('\t');
+				bondList[i] = Number(bIndex[0]);
+				bondList[i+1] = Number(bIndex[1]);
+				nextIndex++;
+			}
+		}
+		fixedTList = [];
+		if ((lines[nextIndex] != undefined) && (lines[nextIndex].search("fixed-T") > -1)) {
+			var fixedTCount = Number(lines[nextIndex].substr(lines[nextIndex].indexOf('=')+1));
+			nextIndex += 2;		// skip header line
+			for (var i=0; i<fixedTCount; i++) {
+				var fixedTItem = lines[nextIndex].split('\t');
+				fixedTList.push({pointer:0, temp:0});
+				fixedTList[i].pointer = Number(fixedTItem[0]);
+				fixedTList[i].temp = Number(fixedTItem[1]);
+				nextIndex++;
+			}
+		}
+		if (selectedAtom >= N) {
+			selectedAtom = -1;
+			selectDataPanel.style.display = "none";
+		}
+		computeAccelerations();
+		reset();
+		paintCanvas();
+	}
+
+	// Write the current system state in JavaScript syntax (suitable for preset file):
+	/*function showJS() {
+		dataArea.value = '{name: "MD configuration",\n';
+		dataArea.value += "N: " + N + ",\n";
+		//dataArea.value += "N2: " + N2 + ",\n2";  BGE: Not sure what I'm trying to do here...
+		dataArea.value += "size: " + boxWidth + ",\n";
+		dataArea.value += "gravity: " + Number(getGravity()).toFixed(3) + ",\n";
+		dataArea.value += "dt: " + Number(dtSlider.value).toFixed(3) + ",\n";
+		dataArea.value += "steps: " + stepsSlider.value + ",\n";
+		dataArea.value += "fixedCount: " + fixedCount + ",\n";
+		dataArea.value += "bondCount: " + bondCount + ",\n";
+		dataArea.value += "fixedTCount: " + fixedTList.length + ",\n";
+		dataArea.value += "data: [\n";
+		var vxString, vyString, vzString;
+		var epsilon = 0.001;		// velocities less than this are set to zero
+		for (var i=0; i<N-1; i++) {
+			if (Math.abs(vx[i]) < epsilon) vxString = "0"; else vxString = vx[i].toFixed(6);
+			if (Math.abs(vy[i]) < epsilon) vyString = "0"; else vyString = vy[i].toFixed(6);
+			if (Math.abs(vz[i]) < epsilon) vzString = "0"; else vzString = vz[i].toFixed(6);
+			dataArea.value += x[i].toFixed(6) + ", " + y[i].toFixed(6) + ", " + z[i].toFixed(6) + ", "
+									+ vxString + ", " + vyString + ", " + vzString + ",\n";
+		}
+		if (Math.abs(vx[N-1]) < epsilon) vxString = "0"; else vxString = vx[N-1].toFixed(6);
+		if (Math.abs(vy[N-1]) < epsilon) vyString = "0"; else vyString = vy[N-1].toFixed(6);
+		if (Math.abs(vz[N-1]) < epsilon) vzString = "0"; else vzString = vz[N-1].toFixed(6);
+		dataArea.value += x[N-1].toFixed(6) + ", " + y[N-1].toFixed(6) + ", " + z[N-1].toFixed(6) + ", "
+									+ vxString + ", " + vyString + ", " + vzString + "]";
+		if (fixedCount > 0) {
+			dataArea.value += ",\nfixedList: [";
+			for (var i=0; i<fixedCount-1; i++) {
+				dataArea.value += fixedList[i] + ", ";
+			}
+			dataArea.value += fixedList[fixedCount-1] + "]";
+		}
+		if (bondCount > 0) {
+			dataArea.value += ",\nbondList: [\n";
+			for (var i=0; i<bondCount-1; i++) {
+				dataArea.value += bondList[2*i] + ", " + bondList[2*i+1] + ",\n";
+			}
+			dataArea.value += bondList[2*(bondCount-1)] + ", " + bondList[2*(bondCount-1)+1] + "]";
+		}
+		if (fixedTList.length > 0) {
+			dataArea.value += ",\nfixedTList: [\n";
+			for (var i=0; i<fixedTList.length-1; i++) {
+				dataArea.value += "{pointer:" + fixedTList[i].pointer + ", temp:" + fixedTList[i].temp + "},\n";
+			}
+			dataArea.value += "{pointer:" + fixedTList[fixedTList.length-1].pointer + ", temp:" + 
+														fixedTList[fixedTList.length-1].temp + "}]";
+		}
+		dataArea.value += "}\n";
+	}*/
+
+	// kludge to handle iOS Safari bug, called by onblur:
+	function deselectPreset() {
+		presetSelect.selectedIndex = 0;
+	}
+
+	// ------------------------------ GRAPHICS OUTPUT ------------------------------
+
+	// Clear the canvas and draw all the molecules:
+	function paintCanvas() {
+	
+		// First draw the background:
+		context.fillStyle = bgColorSelect.options[bgColorSelect.selectedIndex].value;
+		context.fillRect(0, 0, canvas.width, canvas.height);
+
+		// Line style
+		context.strokeStyle = "#808080";		// gray
+		context.lineWidth = 1;
+
+		context.beginPath();
+		context.moveTo(250 / pxPerUnit, 1750 / pxPerUnit);
+		context.lineTo(250 / pxPerUnit, 4750 / pxPerUnit);
+		context.lineTo(3250 / pxPerUnit, 4750 / pxPerUnit);
+		context.lineTo(3250 / pxPerUnit, 1750 / pxPerUnit);
+		context.lineTo(250 / pxPerUnit, 1750 / pxPerUnit);
+		context.lineTo(1750 / pxPerUnit, 250 / pxPerUnit);
+		context.lineTo(4750 / pxPerUnit, 250 / pxPerUnit);
+		context.lineTo(3250 / pxPerUnit, 1750 / pxPerUnit);
+		context.lineTo(3250 / pxPerUnit, 4750 / pxPerUnit);
+		context.lineTo(4750 / pxPerUnit, 3250 / pxPerUnit);
+		context.lineTo(4750 / pxPerUnit, 250 / pxPerUnit);
+		context.lineTo(4750 / pxPerUnit, 3250 / pxPerUnit);
+		context.lineTo(1750 / pxPerUnit, 3250 / pxPerUnit);
+		context.lineTo(250 / pxPerUnit, 4750 / pxPerUnit);
+		context.lineTo(1750 / pxPerUnit, 3250 / pxPerUnit);
+		context.lineTo(1750 / pxPerUnit, 250 / pxPerUnit);
+		context.stroke();
+
+		// Draw atoms next:
+		var speedLimit = 3.0;		// speed for high end of speedColorList
+ 
+		for (var i=0; i<N; i++) {
+			var pixelX = 250.0 / pxPerUnit + x[i] *6.0+ z[i] * 3.0;
+			var pixelY = 1750.0 / pxPerUnit + (y[i] *6.0) - z[i] * 3.0;
+			var grd = context.createRadialGradient(pixelX-2, pixelY-2, 1.5/(1.0+(z[i])/50.0), pixelX, pixelY, 8.5/(1.0+(z[i])/50.0));
+			grd.addColorStop(0, "#F5DA81");
+			grd.addColorStop(1, "#FF8000");
+			context.fillStyle = grd;//theColorOption.value;
+			context.beginPath();
+			context.arc(pixelX, pixelY, 6.0/(1.0+(z[i])/50.0), 0, 2*Math.PI);
+			context.fill();
+		}
+		//Drawing atom type 2
+		for (var i=0; i<N2; i++) {
+			var pixelX2 = 250.0 / pxPerUnit + x2[i] *6.0+ z2[i] * 3.0;
+			var pixelY2 = 1750.0 / pxPerUnit + (y2[i] *6.0) - z2[i] * 3.0;
+			var grd2 = context.createRadialGradient(pixelX2-2, pixelY2-2, 1.75/(1.0+(z2[i])/50.0), pixelX2, pixelY2, 9.0/(1.0+(z2[i])/50.0));
+			grd2.addColorStop(0, "#F5BCA9");
+			grd2.addColorStop(1, "#DF0101");
+			context.fillStyle = grd2;//theColorOption2.value;
+			context.beginPath();
+			context.arc(pixelX2, pixelY2, 7.0/(1.0+(z2[i])/50.0), 0, 2*Math.PI);
+			context.fill();
+		}
+		for (var i=0; i<N3; i++) {
+			var pixelX3 = 250.0 / pxPerUnit + x3[i] *6.0+ z3[i] * 3.0;
+			var pixelY3 = 1750.0 / pxPerUnit + (y3[i] *6.0) - z3[i] * 3.0;
+			var grd3 = context.createRadialGradient(pixelX3-2, pixelY3-2, 3/(1.0+(z3[i])/50.0), pixelX3, pixelY3, 17/(1.0+(z3[i])/50.0));
+			grd3.addColorStop(0, "#A9F5F2");
+			grd3.addColorStop(1, "#00BFFF");
+			context.fillStyle = grd3;//theColorOption2.value;
+			context.beginPath();
+			context.arc(pixelX3, pixelY3, 9.0/(1.0+(z3[i])/50.0), 0, 2*Math.PI);
+			context.fill();
+		}
+		for (var i=0; i<N4; i++) {
+			var pixelX4 = 250.0 / pxPerUnit + x4[i] *6.0+ z4[i] * 3.0;
+			var pixelY4 = 1750.0 / pxPerUnit + (y4[i] *6.0) - z4[i] * 3.0;
+			var grd4 = context.createRadialGradient(pixelX4-2, pixelY4-2, 3/(1.0+(z4[i])/50.0), pixelX4, pixelY4, 17/(1.0+(z4[i])/50.0))
+			grd4.addColorStop(0, "#81DAF5");
+			grd4.addColorStop(1, "#8000FF");
+			context.fillStyle = grd4;//theColorOption2.value;
+			context.beginPath();
+			context.arc(pixelX4, pixelY4, 12.0/(1.0+(z4[i])/50.0), 0, 2*Math.PI);
+			context.fill();
+		}
+	}
+
+
+	function dlf(filename,text){
+	var pom = document.createElement('a');
+	  pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + 
+
+	encodeURIComponent(text));
+	  pom.setAttribute('download', filename);
+
+	  pom.style.display = 'none';
+	  document.body.appendChild(pom);
+
+	  pom.click();
+
+	  document.body.removeChild(pom);
+	}
+
+	/*function download(filename, text) {
+	  var pom = document.createElement('a');
+	  pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + 
+
+	encodeURIComponent(text));
+	  pom.setAttribute('download', filename);
+
+	  pom.style.display = 'none';
+	  document.body.appendChild(pom);
+
+	  pom.click();
+
+	  document.body.removeChild(pom);
+	}*/
+
+
+</script>
+
+</body>
+</html>
